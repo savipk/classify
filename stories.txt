@@ -45,3 +45,57 @@ So that I can start implementing the mapper API following clean architecture pri
 **Architecture Diagram**: Clean Architecture layers showing Interface → Application → Domain ← Infrastructure with dependency flow
 
 **Folder Structure**: Organized by architectural layers with clear separation of concerns
+
+---
+
+# Title:
+[Analysis] Unit Testing Strategy and Test Plan Design
+
+## Status/metadata:
+Open — Issue created today
+
+## [Business Summary]
+As a **developer**  
+I want to have a comprehensive unit testing strategy and test plan  
+So that I can ensure code quality, maintainability, and reliability across all layers of the mapper API with proper test coverage and mocking strategies.
+
+**Placeholder for technical analysis:**
+- Design unit testing strategy aligned with Clean Architecture layers
+- Establish testing patterns for domain logic, application services, and infrastructure
+- Define mocking strategies for Azure services and external dependencies
+
+## [Acceptance Criteria]
+- [ ] **Testing framework selection** and configuration (pytest, unittest)
+- [ ] **Test structure organization** mirroring source code layers
+- [ ] **Domain layer testing** strategy for entities and value objects
+- [ ] **Application layer testing** with use case and service mocking
+- [ ] **Infrastructure layer testing** with Azure service mocks
+- [ ] **Interface layer testing** for API endpoint validation
+- [ ] **Test coverage targets** defined (minimum 80% coverage)
+- [ ] **Mocking strategies** documented for external dependencies
+- [ ] **Test data management** approach for consistent test scenarios
+- [ ] **CI/CD integration** for automated test execution
+- [ ] **Testing documentation** created with examples and patterns
+
+## [Expected Work]
+- [ ] **Test framework setup** with pytest and required plugins
+- [ ] **Mock strategy definition** for Azure OpenAI and Blob Storage
+- [ ] **Test case templates** for each architectural layer
+- [ ] **Domain entity testing** patterns and examples
+- [ ] **Use case testing** with dependency injection mocks
+- [ ] **API integration testing** approach
+- [ ] **Test data fixtures** and factory patterns
+- [ ] **Coverage reporting** configuration and thresholds
+
+## [Technical Context]
+- **Testing Framework**: pytest with asyncio support
+- **Mocking**: unittest.mock, pytest-mock for Azure services
+- **Coverage**: pytest-cov for coverage reporting
+- **Test Structure**: Mirror src structure (tests/unit/domain/, tests/unit/application/, etc.)
+- **Key Testing Areas**: LLM interactions, JSON schema validation, repository patterns
+- **CI Integration**: Test execution in build pipeline with coverage gates
+
+## [Attachments / Mockups]
+**Test Structure**: tests/ directory organized by Clean Architecture layers
+
+**Mock Patterns**: Examples for Azure OpenAI client, blob storage, and repository mocking
