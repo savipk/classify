@@ -1,0 +1,35 @@
+[
+  {
+    "cluster_id": 1,
+    "cluster": "Compliance risk",
+    "taxonomy_id": 1,
+    "nfr_taxonomy": "Employment or Licensing Practices",
+    "taxonomy_description": "The risks arising from acts inconsistent with industry standards.",
+    "risk_theme_id": 1,
+    "risk_theme": "Employment or Licensing Practices",
+    "risk_theme_description": "Inappropriate reward or bonus.",
+    "mapping_considerations": "Any data points related to licensing."
+  },
+  {
+    "cluster_id": 1,
+    "cluster": "Compliance risk",
+    "taxonomy_id": 2,
+    "nfr_taxonomy": "Market Conduct",
+    "taxonomy_description": "The risks arising from the failure to meet market conduct standards.",
+    "risk_theme_id": 2,
+    "risk_theme": "Insider dealing and misuse of market sensitive information",
+    "risk_theme_description": "Leakage of UPSI/MNPI.",
+    "mapping_considerations": "The scope of this risk scenario."
+  },
+  {
+    "cluster_id": 1,
+    "cluster": "Compliance risk",
+    "taxonomy_id": 2,
+    "nfr_taxonomy": "Market Conduct",
+    "taxonomy_description": "The risks arising from the failure to meet market conduct standards.",
+    "risk_theme_id": 3,
+    "risk_theme": "Standards for fair and orderly markets",
+    "risk_theme_description": "Market manipulation on a particular venue.",
+    "mapping_considerations": "Failure to take appropriate actions."
+  }
+]

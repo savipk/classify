@@ -1,0 +1,7 @@
+{
+  "who": "Who carries out the control; role/team and separation of duties.",
+  "what": "What the control activity is; systems/tools/documents involved.",
+  "when": "When it is performed and at what frequency.",
+  "where": "Where coverage applies; regions, entities, systems, vendors.",
+  "why": "Why the control exists; objective and risk it addresses."
+}

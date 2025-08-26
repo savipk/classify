@@ -1,0 +1,7 @@
+# Cursor rules for libra (mapper-api)
+- Use Clean Architecture. Domain is framework-free.
+- Pydantic only at boundaries (DTOs and LLM validation).
+- Azure OpenAI with strict JSON schema (response_format.json_schema, strict=true).
+- Exact folder layout and filenames as provided.
+- No hot reload of definitions; load once at startup from Azure Blob.
+- API contracts must match exactly as specified.

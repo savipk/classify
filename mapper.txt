@@ -1,0 +1,1535 @@
+
+
+===== FILE: README.md =====
+# Mapper API
+
+FastAPI service that maps control descriptions to top Risk Themes and extracts 5Ws presence using Azure OpenAI with strict JSON.
+
+## Run locally
+1. Create `.env` with required variables (see below).
+2. Install deps: `pip install -e .` or install from `pyproject.toml`.
+3. Start API: `uvicorn mapper_api.interface.http.api:app --reload`.
+
+## .env example
+```
+APP_ENV=dev
+PORT=8000
+
+AZURE_OPENAI_ENDPOINT=https://<your-endpoint>.openai.azure.com/
+AZURE_OPENAI_API_KEY=...
+AZURE_OPENAI_API_VERSION=2024-12-01-preview
+AZURE_OPENAI_DEPLOYMENT=MyPolicies-DEV-GPT4o
+
+STORAGE_ACCOUNT_NAME=stoat48090dev
+STORAGE_CONTAINER_NAME=libra-ai
+AZURE_TENANT_ID=...
+AZURE_CLIENT_ID=...
+AZURE_CLIENT_SECRET=...
+```
+
+## Endpoints
+- POST `/taxonomy_mapper`
+- POST `/5ws_mapper`
+
+
+===== FILE: export_mapper.py =====
+#!/usr/bin/env python3
+"""
+Export all Python (.py, .pyi), TOML (.toml), and Markdown (.md) files
+from a directory tree into a single text file named mapper.txt.
+
+Usage:
+  python export_mapper.py [ROOT] [OUTPUT]
+
+Defaults:
+  ROOT   = current working directory
+  OUTPUT = mapper.txt
+"""
+from __future__ import annotations
+import sys
+from pathlib import Path
+
+# Extensions to include
+ALLOW_EXT = {".py", ".pyi", ".toml", ".md"}
+
+# Common directories to skip
+EXCLUDE_DIRS = {
+    ".git", "node_modules", ".venv", "venv", "env", "__pycache__",
+    "dist", "build", ".mypy_cache", ".pytest_cache", ".tox", ".idea",
+    ".eggs", ".ruff_cache", ".pytype", ".coverage"
+}
+
+def is_excluded(path: Path) -> bool:
+    parts = path.parts
+    for part in parts:
+        if part in EXCLUDE_DIRS:
+            return True
+        if part.endswith(".egg-info"):
+            return True
+    return False
+
+def main() -> None:
+    root = Path(sys.argv[1]) if len(sys.argv) > 1 else Path(".")
+    out_path = Path(sys.argv[2]) if len(sys.argv) > 2 else Path("mapper.txt")
+
+    if not root.exists():
+        print(f"Root path does not exist: {root}")
+        sys.exit(1)
+
+    # Collect candidate files
+    candidates = []
+    for p in root.rglob("*"):
+        if not p.is_file():
+            continue
+        if is_excluded(p):
+            continue
+        if p.suffix.lower() in ALLOW_EXT:
+            candidates.append(p)
+
+    # Sort for stable, readable output (by relative POSIX path)
+    candidates.sort(key=lambda p: p.relative_to(root).as_posix())
+
+    # Write output with file headers
+    with out_path.open("w", encoding="utf-8", newline="\n") as out:
+        for p in candidates:
+            rel = p.relative_to(root).as_posix()
+            out.write(f"\n\n===== FILE: {rel} =====\n")
+            try:
+                out.write(p.read_text(encoding="utf-8", errors="ignore"))
+            except Exception as e:
+                out.write(f"<<Skipped unreadable file: {e}>>")
+
+    print(f"Wrote {len(candidates)} files to {out_path}")
+
+if __name__ == "__main__":
+    main()
+
+
+===== FILE: mapper_api/__init__.py =====
+
+
+===== FILE: mapper_api/application/__init__.py =====
+"""Module: application/__init__.py
+
+Scaffold per spec. Implementation to follow."""
+
+
+===== FILE: mapper_api/application/dto/__init__.py =====
+"""Module: application/dto/__init__.py
+
+Scaffold per spec. Implementation to follow."""
+
+
+===== FILE: mapper_api/application/dto/output_schemas.py =====
+"""Pydantic models for strict JSON LLM outputs (dynamic taxonomy, fixed 5Ws)."""
+from __future__ import annotations
+from typing import Sequence, Literal
+from pydantic import BaseModel, conlist, confloat
+
+
+def build_taxonomy_models(allowed_names: Sequence[str]):
+    NameLiteral = Literal[tuple(allowed_names)]  # type: ignore
+
+    class TaxonomyItem(BaseModel):
+        name: NameLiteral
+        id: int
+        score: confloat(ge=0.0, le=1.0)  # type: ignore[valid-type]
+        reasoning: str
+
+    class TaxonomyOut(BaseModel):
+        taxonomy: conlist(TaxonomyItem, min_length=3, max_length=3)  # type: ignore[valid-type]
+
+    return TaxonomyItem, TaxonomyOut
+
+
+class FiveWItem(BaseModel):
+    name: Literal["who", "what", "when", "where", "why"]
+    status: Literal["present", "missing"]
+    reasoning: str
+
+
+class FiveWOut(BaseModel):
+    fivews: conlist(FiveWItem, min_length=5, max_length=5)  # type: ignore[valid-type]
+
+
+===== FILE: mapper_api/application/dto/requests.py =====
+"""Pydantic request DTOs matching API contracts."""
+from __future__ import annotations
+from pydantic import BaseModel, Field
+
+
+class CommonHeader(BaseModel):
+    recordId: str = Field(...)
+
+
+class CommonData(BaseModel):
+    controlDescription: str = Field(...)
+
+
+class CommonRequest(BaseModel):
+    header: CommonHeader
+    data: CommonData
+
+
+===== FILE: mapper_api/application/dto/responses.py =====
+"""Pydantic response DTOs matching API contracts."""
+from __future__ import annotations
+from typing import Literal
+from pydantic import BaseModel, Field, conlist, confloat
+from pydantic import ConfigDict
+
+
+class ResponseHeader(BaseModel):
+    recordId: str
+
+
+class TaxonomyItem(BaseModel):
+    name: str
+    id: int
+    score: confloat(ge=0.0, le=1.0)  # type: ignore[valid-type]
+    reasoning: str
+
+
+class TaxonomyData(BaseModel):
+    taxonomy: conlist(TaxonomyItem, min_length=3, max_length=3)  # type: ignore[valid-type]
+
+
+class TaxonomyResponse(BaseModel):
+    header: ResponseHeader
+    data: TaxonomyData
+
+
+FiveWName = Literal["who", "what", "when", "where", "why"]
+FiveWStatus = Literal["present", "missing"]
+
+
+class FiveWItem(BaseModel):
+    name: FiveWName
+    status: FiveWStatus
+    reasoning: str
+
+
+class FiveWData(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+    _order = ["who", "what", "when", "where", "why"]
+    fivews: conlist(FiveWItem, min_length=5, max_length=5) = Field(  # type: ignore[valid-type]
+        serialization_alias="5ws",
+        validation_alias="5ws",
+    )
+
+
+class FiveWResponse(BaseModel):
+    header: ResponseHeader
+    data: FiveWData
+
+
+===== FILE: mapper_api/application/mappers/__init__.py =====
+"""Module: application/mappers/__init__.py
+
+Scaffold per spec. Implementation to follow."""
+
+
+===== FILE: mapper_api/application/mappers/assemblers.py =====
+"""Assemblers to convert domain outputs to response DTO dicts."""
+from __future__ import annotations
+from typing import Iterable, List, Dict
+from mapper_api.domain.value_objects.score import ThemeClassification
+
+
+def assemble_taxonomy_items(classifications: Iterable[ThemeClassification]) -> List[Dict]:
+    return [
+        {
+            "name": c.name,
+            "id": c.id,
+            "score": float(c.score.value),
+            "reasoning": c.reasoning,
+        }
+        for c in classifications
+    ]
+
+
+===== FILE: mapper_api/application/ports/__init__.py =====
+"""Module: application/ports/__init__.py
+
+Scaffold per spec. Implementation to follow."""
+
+
+===== FILE: mapper_api/application/ports/llm.py =====
+"""Port/Protocol for LLM client capable of json_schema_chat."""
+from __future__ import annotations
+from typing import Protocol, Mapping, Any, Optional
+
+
+class LLMClient(Protocol):
+    def json_schema_chat(
+        self,
+        *,
+        system: str,
+        user: str,
+        schema_name: str,
+        schema: Mapping[str, Any],
+        max_tokens: int,
+        temperature: float = 0.1,
+        context: Optional[dict] = None,
+        deployment: Optional[str] = None,
+    ) -> str:
+        """Return raw JSON string validated by the model against provided JSON Schema."""
+        ...
+
+
+===== FILE: mapper_api/application/prompts/__init__.py =====
+"""Module: application/prompts/__init__.py
+
+Scaffold per spec. Implementation to follow."""
+
+
+===== FILE: mapper_api/application/prompts/fivews.py =====
+"""Prompt builders for 5Ws extraction. System + user with definitions."""
+from __future__ import annotations
+from typing import Sequence, Mapping
+
+SYSTEM = (
+    "Extract presence of who, what, when, where, why. Output ONLY valid JSON matching the provided JSON Schema. "
+    "Use ONLY the provided definitions. Names must be exactly one of who, what, when, where, why."
+)
+
+
+def build_user_prompt(control_text: str, fivews_defs: Sequence[Mapping[str, str]]) -> str:
+    lines = ["Definitions:"]
+    for row in fivews_defs:
+        lines.append(f"- {row['name']}: {row['description']}")
+    lines.append("")
+    lines.append("Control description:")
+    lines.append(control_text)
+    lines.append("")
+    lines.append("Return JSON with exactly 5 items covering who, what, when, where, why.")
+    return "\n".join(lines)
+
+
+===== FILE: mapper_api/application/prompts/taxonomy.py =====
+"""Prompt builders for taxonomy mapping. System + user with full catalog."""
+from __future__ import annotations
+from typing import Sequence
+from mapper_api.domain.repositories.definitions import ThemeRow
+
+
+SYSTEM = (
+    "You are a careful classifier. Output ONLY valid JSON matching the provided JSON Schema. "
+    "Use ONLY the provided Risk Theme catalog. Match names exactly."
+)
+
+
+def build_user_prompt(control_text: str, rows: Sequence[ThemeRow]) -> str:
+    lines = ["Catalog of Risk Themes:"]
+    for r in rows:
+        lines.append(
+            f"- risk_theme: {r.risk_theme} (id={r.risk_theme_id}) | taxonomy: {r.taxonomy} (id={r.taxonomy_id}) | taxonomy_description: {r.taxonomy_description} | mapping_considerations: {r.mapping_considerations}"
+        )
+    lines.append("")
+    lines.append("Control description:")
+    lines.append(control_text)
+    lines.append("")
+    lines.append("Return JSON with exactly 3 items in taxonomy.")
+    return "\n".join(lines)
+
+
+class TaxonomyPrompt:
+    def __init__(self, rows: Sequence[ThemeRow]) -> None:
+        self._rows = list(rows)
+
+    def build(self, *, record_id: str, control_description: str) -> tuple[str, str]:
+        # the system is static for now; could be extended to embed trace
+        system = SYSTEM
+        user = build_user_prompt(control_description, self._rows)
+        return system, user
+
+
+===== FILE: mapper_api/application/use_cases/__init__.py =====
+"""Module: application/use_cases/__init__.py
+
+Scaffold per spec. Implementation to follow."""
+
+
+===== FILE: mapper_api/application/use_cases/map_control_to_5ws.py =====
+"""Use case: extract 5Ws presence with reasoning using LLM with strict JSON."""
+from __future__ import annotations
+import json
+from dataclasses import dataclass
+from typing import Sequence
+from mapper_api.application.dto.output_schemas import FiveWOut
+from mapper_api.application.ports.llm import LLMClient
+from mapper_api.application.prompts import fivews as fivews_prompts
+from mapper_api.domain.entities.control import Control
+from mapper_api.domain.repositories.definitions import DefinitionsRepository
+from mapper_api.domain.errors import ValidationError, DefinitionsNotLoadedError
+
+_ORDER = ["who", "what", "when", "where", "why"]
+
+
+@dataclass
+class ClassifyControlToFiveWs:
+    repo: DefinitionsRepository
+    llm: LLMClient
+
+    def run(self, *, record_id: str, control_description: str, deployment: str):
+        ctrl = Control(text=control_description)
+        if not ctrl.text or not ctrl.text.strip():
+            raise ValidationError("controlDescription must not be empty")
+
+        defs = self.repo.get_fivews_rows()
+        if not defs:
+            raise DefinitionsNotLoadedError("5Ws definitions not loaded")
+
+        schema = FiveWOut.model_json_schema()
+        system_prompt = fivews_prompts.SYSTEM
+        user_prompt = fivews_prompts.build_user_prompt(ctrl.text, defs)
+
+        raw = self.llm.json_schema_chat(
+            system=system_prompt,
+            user=user_prompt,
+            schema_name="FiveWsResponse",
+            schema=schema,
+            max_tokens=400,
+            temperature=0.1,
+            context={"trace_id": record_id},
+            deployment=deployment,
+        )
+
+        try:
+            data = FiveWOut.model_validate_json(raw)
+        except Exception as e:
+            raise ValidationError(f"LLM output validation failed: {e}")
+
+        ordered = sorted(data.fivews, key=lambda x: _ORDER.index(x.name))
+        return [
+            {"name": i.name, "status": i.status, "reasoning": i.reasoning}
+            for i in ordered
+        ]
+
+
+def map_control_to_5ws(
+    *,
+    record_id: str,
+    control_description: str,
+    repo: DefinitionsRepository,
+    llm: LLMClient,
+    deployment: str,
+) -> dict:
+    use_case = ClassifyControlToFiveWs(repo=repo, llm=llm)
+    return use_case.run(record_id=record_id, control_description=control_description, deployment=deployment)
+
+
+===== FILE: mapper_api/application/use_cases/map_control_to_themes.py =====
+"""Use case: map control to top 3 Risk Themes using LLM with strict JSON."""
+from __future__ import annotations
+import json
+from dataclasses import dataclass
+from typing import Sequence
+from mapper_api.domain.entities.control import Control
+from mapper_api.domain.repositories.definitions import DefinitionsRepository
+from mapper_api.domain.errors import ValidationError, DefinitionsNotLoadedError
+from mapper_api.application.dto.output_schemas import build_taxonomy_models
+from mapper_api.application.prompts.taxonomy import TaxonomyPrompt
+from mapper_api.application.mappers.assemblers import assemble_taxonomy_items
+from mapper_api.domain.value_objects.score import ThemeClassification, Score
+from mapper_api.application.ports.llm import LLMClient
+from mapper_api.application.prompts import taxonomy as taxonomy_prompts
+
+
+@dataclass
+class ClassifyControlToThemes:
+    repo: DefinitionsRepository
+    llm: LLMClient
+    prompt: TaxonomyPrompt
+    TaxonomyOut: type
+
+    @classmethod
+    def from_defs(cls, repo: DefinitionsRepository, llm: LLMClient):
+        rows = repo.get_theme_rows()
+        if not rows:
+            raise DefinitionsNotLoadedError("taxonomy definitions not loaded")
+        allowed_names = [r.risk_theme for r in rows]
+        _, TaxonomyOut = build_taxonomy_models(allowed_names)
+        prompt = TaxonomyPrompt(rows)
+        return cls(repo=repo, llm=llm, prompt=prompt, TaxonomyOut=TaxonomyOut)
+
+    def run(self, *, record_id: str, control_description: str, deployment: str):
+        ctrl = Control(text=control_description)
+        if not ctrl.text or not ctrl.text.strip():
+            raise ValidationError("controlDescription must not be empty")
+        system, user = self.prompt.build(record_id=record_id, control_description=ctrl.text)
+        schema = self.TaxonomyOut.model_json_schema()
+        raw = self.llm.json_schema_chat(
+            system=system,
+            user=user,
+            schema_name="TaxonomyMapperResponse",
+            schema=schema,
+            max_tokens=600,
+            temperature=0.1,
+            context={"trace_id": record_id},
+            deployment=deployment,
+        )
+        try:
+            data = self.TaxonomyOut.model_validate_json(raw)
+        except Exception as e:
+            raise ValidationError(f"LLM output validation failed: {e}")
+        items = sorted(data.taxonomy, key=lambda x: x.score, reverse=True)[:3]
+        classifications = [
+            ThemeClassification(name=i.name, id=i.id, score=Score(i.score), reasoning=i.reasoning)
+            for i in items
+        ]
+        return assemble_taxonomy_items(classifications)
+
+
+def map_control_to_themes(
+    *,
+    record_id: str,
+    control_description: str,
+    repo: DefinitionsRepository,
+    llm: LLMClient,
+    deployment: str,
+) -> dict:
+    use_case = ClassifyControlToThemes.from_defs(repo, llm)
+    return use_case.run(record_id=record_id, control_description=control_description, deployment=deployment)
+
+
+===== FILE: mapper_api/config/__init__.py =====
+"""Module: config/__init__.py
+
+Scaffold per spec. Implementation to follow."""
+
+
+===== FILE: mapper_api/config/settings.py =====
+"""Settings via Pydantic BaseSettings for envs and Azure config."""
+from __future__ import annotations
+from typing import Literal
+from pydantic_settings import BaseSettings
+from pydantic import Field
+
+
+class Settings(BaseSettings):
+    APP_ENV: Literal['dev', 'uat', 'prod']
+    PORT: int = Field(default=8000)
+
+    AZURE_OPENAI_ENDPOINT: str
+    AZURE_OPENAI_API_KEY: str
+    AZURE_OPENAI_API_VERSION: str = Field(default='2024-12-01-preview')
+    AZURE_OPENAI_DEPLOYMENT: str
+
+    STORAGE_ACCOUNT_NAME: str
+    STORAGE_CONTAINER_NAME: str = Field(default='libra-ai')
+    AZURE_TENANT_ID: str
+    AZURE_CLIENT_ID: str
+    AZURE_CLIENT_SECRET: str
+
+    class Config:
+        env_file = '.env'
+        env_file_encoding = 'utf-8'
+
+
+===== FILE: mapper_api/domain/__init__.py =====
+"""Module: domain/__init__.py
+
+Scaffold per spec. Implementation to follow."""
+
+
+===== FILE: mapper_api/domain/entities/__init__.py =====
+"""Module: domain/entities/__init__.py
+
+Scaffold per spec. Implementation to follow."""
+
+
+===== FILE: mapper_api/domain/entities/cluster.py =====
+"""Domain entity representing a Cluster. Framework-free.
+
+Top level in the hierarchy: Cluster -> Taxonomy -> RiskTheme
+"""
+from __future__ import annotations
+from dataclasses import dataclass
+
+
+@dataclass(frozen=True, slots=True)
+class Cluster:
+    """Top-level cluster grouping taxonomies and risk themes"""
+    id: int
+    name: str
+
+
+
+
+===== FILE: mapper_api/domain/entities/control.py =====
+"""Domain entity for Control. Framework-free. Holds textual description and optional external id.
+
+Implements: Control(text: str, id: Optional[str])
+"""
+from __future__ import annotations
+from dataclasses import dataclass
+from typing import Optional
+
+
+@dataclass(frozen=True, slots=True)
+class Control:
+    """Represents a control record to be mapped.
+
+    Attributes:
+        text: The control description text to analyze.
+        id: Optional external identifier.
+    """
+    text: str
+    id: Optional[str] = None
+
+    def ensure_not_empty(self) -> None:
+        if not self.text or not self.text.strip():
+            raise ValueError("control description must not be empty")
+
+
+===== FILE: mapper_api/domain/entities/risk_theme.py =====
+"""Domain entity representing a Risk Theme with taxonomy metadata. Framework-free.
+
+Implements: RiskTheme(id: int, name: str, nfr_taxonomy_id: int, nfr_taxonomy: str, cluster: str)
+"""
+from __future__ import annotations
+from dataclasses import dataclass
+
+
+@dataclass(frozen=True, slots=True)
+class RiskTheme:
+    """Risk Theme with taxonomy metadata"""
+    id: int
+    name: str
+    taxonomy_id: int
+    taxonomy: str
+    cluster: str
+    cluster_id: int
+
+
+===== FILE: mapper_api/domain/entities/taxonomy.py =====
+"""Domain entity representing a Taxonomy. Framework-free.
+
+Represents the middle layer in the hierarchy: Cluster -> Taxonomy -> RiskTheme
+"""
+from __future__ import annotations
+from dataclasses import dataclass
+
+
+@dataclass(frozen=True, slots=True)
+class Taxonomy:
+    """Taxonomy category belonging to a Cluster"""
+    id: int
+    name: str
+    description: str
+    cluster_id: int
+
+
+
+
+===== FILE: mapper_api/domain/errors.py =====
+"""Domain errors and exceptions used across layers."""
+class DomainError(Exception):
+    """Base domain error."""
+
+
+class ValidationError(DomainError):
+    """Raised when domain invariants are violated."""
+
+
+class DefinitionsNotLoadedError(DomainError):
+    """Raised when required definitions are not available."""
+
+
+===== FILE: mapper_api/domain/repositories/__init__.py =====
+"""Module: domain/repositories/__init__.py
+
+Scaffold per spec. Implementation to follow."""
+
+
+===== FILE: mapper_api/domain/repositories/definitions.py =====
+"""Repository protocol for loading taxonomy and 5Ws definitions."""
+from __future__ import annotations
+from dataclasses import dataclass
+from typing import Protocol, Sequence, Dict, Any
+
+
+@dataclass(frozen=True, slots=True)
+class ThemeRow:
+    cluster_id: int
+    cluster: str
+    taxonomy_id: int
+    taxonomy: str
+    taxonomy_description: str
+    risk_theme_id: int
+    risk_theme: str
+    risk_theme_description: str
+    mapping_considerations: str
+
+
+class DefinitionsRepository(Protocol):
+    def get_theme_rows(self) -> Sequence[ThemeRow]:
+        """Return sequence of taxonomy theme rows."""
+        ...
+
+    def get_fivews_rows(self) -> Sequence[Dict[str, Any]]:
+        """Return sequence of dict rows for 5Ws definitions with keys: name, description."""
+        ...
+
+
+===== FILE: mapper_api/domain/services/__init__.py =====
+"""Module: domain/services/__init__.py
+
+Scaffold per spec. Implementation to follow."""
+
+
+===== FILE: mapper_api/domain/services/classifiers.py =====
+"""Domain service protocols for classification orchestration."""
+from __future__ import annotations
+from typing import Protocol
+
+
+class Classifier(Protocol):
+    def classify(self, text: str) -> str:  # placeholder for domain-level service
+        ...
+
+
+===== FILE: mapper_api/domain/value_objects/__init__.py =====
+"""Module: domain/value_objects/__init__.py
+
+Scaffold per spec. Implementation to follow."""
+
+
+===== FILE: mapper_api/domain/value_objects/fivew.py =====
+"""Domain value objects for 5Ws: names enum and finding set with invariants.
+
+- FiveWName Enum
+- FiveWFinding(name, status, reasoning)
+- FiveWsSet(items: tuple[FiveWFinding, ...]) enforces exactly five unique names in order [who, what, when, where, why]
+"""
+from __future__ import annotations
+from dataclasses import dataclass
+from enum import Enum
+from typing import Iterable, Tuple
+
+
+class FiveWName(str, Enum):
+    WHO = "who"
+    WHAT = "what"
+    WHEN = "when"
+    WHERE = "where"
+    WHY = "why"
+
+
+class FiveWStatus(str, Enum):
+    PRESENT = "present"
+    MISSING = "missing"
+
+
+@dataclass(frozen=True, slots=True)
+class FiveWFinding:
+    name: FiveWName
+    status: FiveWStatus
+    reasoning: str
+
+
+@dataclass(frozen=True, slots=True)
+class FiveWsSet:
+    items: Tuple[FiveWFinding, ...]
+
+    ORDER = (FiveWName.WHO, FiveWName.WHAT, FiveWName.WHEN, FiveWName.WHERE, FiveWName.WHY)
+
+    def __post_init__(self) -> None:
+        names = [f.name for f in self.items]
+        if len(self.items) != 5:
+            raise ValueError("FiveWsSet must contain exactly five findings")
+        if names != list(self.ORDER):
+            raise ValueError("FiveWsSet items must be in order [who, what, when, where, why]")
+        if len(set(names)) != 5:
+            raise ValueError("FiveWsSet names must be unique")
+
+
+===== FILE: mapper_api/domain/value_objects/score.py =====
+"""Domain value object enforcing score in [0,1]."""
+from __future__ import annotations
+from dataclasses import dataclass
+
+
+@dataclass(frozen=True, slots=True)
+class Score:
+    value: float
+
+    def __post_init__(self) -> None:
+        if not (0.0 <= self.value <= 1.0):
+            raise ValueError("score must be between 0 and 1 inclusive")
+
+    def __float__(self) -> float:  # convenience
+        return float(self.value)
+
+
+@dataclass(frozen=True, slots=True)
+class ThemeClassification:
+    """Value object holding classification metadata for a RiskTheme."""
+    name: str
+    id: int
+    score: Score
+    reasoning: str
+
+
+===== FILE: mapper_api/infrastructure/__init__.py =====
+"""Module: infrastructure/__init__.py
+
+Scaffold per spec. Implementation to follow."""
+
+
+===== FILE: mapper_api/infrastructure/azure/__init__.py =====
+"""Module: infrastructure/azure/__init__.py
+
+Scaffold per spec. Implementation to follow."""
+
+
+===== FILE: mapper_api/infrastructure/azure/blob_definitions_repo.py =====
+"""Azure Blob adapter to load taxonomy.json and 5ws.json once at startup."""
+from __future__ import annotations
+import json
+from typing import Sequence, Dict, Any, Optional
+from azure.identity import ClientSecretCredential
+from azure.storage.blob import BlobServiceClient
+from mapper_api.domain.repositories.definitions import DefinitionsRepository, ThemeRow
+
+
+class BlobDefinitionsRepository(DefinitionsRepository):
+    def __init__(
+        self,
+        *,
+        account_name: str,
+        container_name: str,
+        tenant_id: str,
+        client_id: str,
+        client_secret: str,
+    ) -> None:
+        self._credential = ClientSecretCredential(tenant_id=tenant_id, client_id=client_id, client_secret=client_secret)
+        self._service = BlobServiceClient(
+            account_url=f"https://{account_name}.blob.core.windows.net",
+            credential=self._credential,
+        )
+        self._container = self._service.get_container_client(container_name)
+        self._themes: Optional[Sequence[ThemeRow]] = None
+        self._fivews: Optional[Sequence[Dict[str, Any]]] = None
+        self._load()
+
+    def _load(self) -> None:
+        self._themes = self._load_themes()
+        self._fivews = self._load_fivews()
+
+    def _load_themes(self) -> Sequence[ThemeRow]:
+        blob = self._container.get_blob_client("taxonomy.json")
+        data = blob.download_blob().readall()
+        rows = json.loads(data)
+        result: list[ThemeRow] = []
+        for r in rows:
+            result.append(
+                ThemeRow(
+                    cluster_id=int(r["cluster_id"]),
+                    cluster=r["cluster"],
+                    taxonomy_id=int(r["taxonomy_id"]),
+                    taxonomy=r["nfr_taxonomy"],
+                    taxonomy_description=r["taxonomy_description"],
+                    risk_theme_id=int(r["risk_theme_id"]),
+                    risk_theme=r["risk_theme"],
+                    risk_theme_description=r["risk_theme_description"],
+                    mapping_considerations=r["mapping_considerations"],
+                )
+            )
+        return result
+
+    def _load_fivews(self) -> Sequence[Dict[str, Any]]:
+        blob = self._container.get_blob_client("5ws.json")
+        data = blob.download_blob().readall()
+        obj = json.loads(data)
+        order = ["who", "what", "when", "where", "why"]
+        return [{"name": k, "description": obj[k]} for k in order if k in obj]
+
+    def get_theme_rows(self) -> Sequence[ThemeRow]:
+        return self._themes or []
+
+    def get_fivews_rows(self) -> Sequence[Dict[str, Any]]:
+        return self._fivews or []
+
+
+===== FILE: mapper_api/infrastructure/azure/openai_client.py =====
+"""Azure OpenAI client calling Chat Completions with response_format json_schema."""
+from __future__ import annotations
+import time
+from typing import Mapping, Any, Optional
+from openai import AzureOpenAI
+from tenacity import retry, stop_after_attempt, wait_exponential
+from mapper_api.infrastructure.logging.logger import get_logger
+
+
+class AzureOpenAILLMClient:
+    def __init__(self, *, endpoint: str, api_key: str, api_version: str) -> None:
+        self._client = AzureOpenAI(azure_endpoint=endpoint, api_key=api_key, api_version=api_version)
+        self._logger = get_logger("mapper.llm")
+
+    @retry(stop=stop_after_attempt(2), wait=wait_exponential(multiplier=0.3, min=0.3, max=2.0))
+    def json_schema_chat(
+        self,
+        *,
+        system: str,
+        user: str,
+        schema_name: str,
+        schema: Mapping[str, Any],
+        max_tokens: int,
+        temperature: float = 0.1,
+        context: Optional[dict] = None,
+        deployment: Optional[str] = None,
+    ) -> str:
+        start = time.perf_counter()
+        model_name = deployment if deployment else ""
+        resp = self._client.chat.completions.create(
+            model=model_name,
+            messages=[
+                {"role": "system", "content": system},
+                {"role": "user", "content": user},
+            ],
+            response_format={
+                "type": "json_schema",
+                "json_schema": {
+                    "name": schema_name,
+                    "schema": schema,
+                    "strict": True,
+                },
+            },
+            temperature=temperature,
+            top_p=1.0,
+            max_tokens=max_tokens,
+        )
+        latency_ms = int((time.perf_counter() - start) * 1000)
+        usage = getattr(resp, "usage", None)
+        try:
+            self._logger.info(
+                "llm.chat.json_schema",
+                extra={
+                    "traceId": (context or {}).get("trace_id"),
+                    "deployment": model_name,
+                    "latencyMs": latency_ms,
+                    "promptTokens": getattr(usage, "prompt_tokens", None) if usage else None,
+                    "completionTokens": getattr(usage, "completion_tokens", None) if usage else None,
+                    "totalTokens": getattr(usage, "total_tokens", None) if usage else None,
+                },
+            )
+        except Exception:
+            pass
+        content = resp.choices[0].message.content  # type: ignore[attr-defined]
+        return content
+
+
+===== FILE: mapper_api/infrastructure/logging/__init__.py =====
+"""Module: infrastructure/logging/__init__.py
+
+Scaffold per spec. Implementation to follow."""
+
+
+===== FILE: mapper_api/infrastructure/logging/logger.py =====
+"""Structured logging setup with traceId correlation."""
+from __future__ import annotations
+import json
+import logging
+from typing import Any, Dict
+
+
+def get_logger(name: str = "mapper") -> logging.Logger:
+    logger = logging.getLogger(name)
+    if not logger.handlers:
+        handler = logging.StreamHandler()
+        handler.setFormatter(JsonFormatter())
+        logger.addHandler(handler)
+        logger.setLevel(logging.INFO)
+    return logger
+
+
+class JsonFormatter(logging.Formatter):
+    def format(self, record: logging.LogRecord) -> str:  # type: ignore[override]
+        payload: Dict[str, Any] = {
+            "level": record.levelname,
+            "message": record.getMessage(),
+            "logger": record.name,
+        }
+        for key in ("traceId", "deployment", "latencyMs", "promptTokens", "completionTokens", "totalTokens", "labels"):
+            if hasattr(record, key):
+                payload[key] = getattr(record, key)
+        return json.dumps(payload, ensure_ascii=False)
+
+
+===== FILE: mapper_api/interface/__init__.py =====
+"""Module: interface/__init__.py
+
+Scaffold per spec. Implementation to follow."""
+
+
+===== FILE: mapper_api/interface/di/__init__.py =====
+"""Module: interface/di/__init__.py
+
+Scaffold per spec. Implementation to follow."""
+
+
+===== FILE: mapper_api/interface/di/container.py =====
+"""Simple DI container assembling adapters, prompts, and use cases. Loads definitions once."""
+from __future__ import annotations
+from dataclasses import dataclass
+from mapper_api.config.settings import Settings
+from mapper_api.infrastructure.azure.blob_definitions_repo import BlobDefinitionsRepository
+from mapper_api.infrastructure.azure.openai_client import AzureOpenAILLMClient
+from mapper_api.application.ports.llm import LLMClient
+from mapper_api.domain.repositories.definitions import DefinitionsRepository
+
+
+@dataclass
+class Container:
+    settings: Settings
+    definitions_repo: DefinitionsRepository
+    llm_client: LLMClient
+    definitions_loaded: bool
+
+
+def build_container() -> Container:
+    settings = Settings()
+    repo = BlobDefinitionsRepository(
+        account_name=settings.STORAGE_ACCOUNT_NAME,
+        container_name=settings.STORAGE_CONTAINER_NAME,
+        tenant_id=settings.AZURE_TENANT_ID,
+        client_id=settings.AZURE_CLIENT_ID,
+        client_secret=settings.AZURE_CLIENT_SECRET,
+    )
+    defs_loaded = bool(repo.get_theme_rows()) and bool(repo.get_fivews_rows())
+    llm: LLMClient = AzureOpenAILLMClient(
+        endpoint=settings.AZURE_OPENAI_ENDPOINT,
+        api_key=settings.AZURE_OPENAI_API_KEY,
+        api_version=settings.AZURE_OPENAI_API_VERSION,
+    )
+    return Container(settings=settings, definitions_repo=repo, llm_client=llm, definitions_loaded=defs_loaded)
+
+
+===== FILE: mapper_api/interface/di/mock_container.py =====
+"""Mock container wiring local file definitions and static LLM."""
+from __future__ import annotations
+from dataclasses import dataclass
+from typing import Any
+from mapper_api.domain.repositories.definitions import DefinitionsRepository
+from mapper_api.mock.definitions_repo import LocalFileDefinitionsRepository
+from mapper_api.mock.llm_client import StaticLLMClient
+from mapper_api.application.ports.llm import LLMClient
+
+
+@dataclass
+class MockSettings:
+    AZURE_OPENAI_DEPLOYMENT: str = 'mock-deployment'
+
+
+@dataclass
+class MockContainer:
+    settings: MockSettings
+    definitions_repo: DefinitionsRepository
+    llm_client: LLMClient
+    definitions_loaded: bool
+
+
+def build_mock_container() -> MockContainer:
+    repo = LocalFileDefinitionsRepository()
+    llm: LLMClient = StaticLLMClient()
+    return MockContainer(settings=MockSettings(), definitions_repo=repo, llm_client=llm,
+                         definitions_loaded=bool(repo.get_theme_rows()) and bool(repo.get_fivews_rows()))
+
+
+===== FILE: mapper_api/interface/http/__init__.py =====
+"""Module: interface/http/__init__.py
+
+Scaffold per spec. Implementation to follow."""
+
+
+===== FILE: mapper_api/interface/http/api.py =====
+"""FastAPI app wiring routers and exception handlers."""
+from __future__ import annotations
+from fastapi import FastAPI
+from fastapi.exceptions import RequestValidationError
+from mapper_api.interface.http.routers.taxonomy_mapper import router as taxonomy_router
+from mapper_api.interface.http.routers.fivews_mapper import router as fivews_router
+from mapper_api.interface.http.errors import validation_exception_handler, definitions_exception_handler, unhandled_exception_handler
+from mapper_api.domain.errors import ValidationError, DefinitionsNotLoadedError
+
+
+def create_app() -> FastAPI:
+    app = FastAPI(title="Mapper API")
+    app.include_router(taxonomy_router)
+    app.include_router(fivews_router)
+
+    app.add_exception_handler(ValidationError, validation_exception_handler)
+    app.add_exception_handler(RequestValidationError, validation_exception_handler)
+    app.add_exception_handler(DefinitionsNotLoadedError, definitions_exception_handler)
+    app.add_exception_handler(Exception, unhandled_exception_handler)
+    return app
+
+
+app = create_app()
+
+
+===== FILE: mapper_api/interface/http/errors.py =====
+"""HTTP error handling mapping domain/app errors to status codes."""
+from __future__ import annotations
+from fastapi import Request
+from fastapi.responses import JSONResponse
+from mapper_api.domain.errors import ValidationError, DefinitionsNotLoadedError
+
+
+async def validation_exception_handler(request: Request, exc: ValidationError):
+    record_id = request.headers.get('x-trace-id')
+    return JSONResponse(status_code=400, content={"error": str(exc), "traceId": record_id})
+
+
+async def definitions_exception_handler(request: Request, exc: DefinitionsNotLoadedError):
+    record_id = request.headers.get('x-trace-id')
+    return JSONResponse(status_code=404, content={"error": str(exc), "traceId": record_id})
+
+
+async def unhandled_exception_handler(request: Request, exc: Exception):
+    record_id = request.headers.get('x-trace-id')
+    return JSONResponse(status_code=500, content={"error": "Internal Server Error", "traceId": record_id})
+
+
+===== FILE: mapper_api/interface/http/mock_api.py =====
+"""FastAPI app configured to use mock container for local testing."""
+from __future__ import annotations
+from fastapi import FastAPI
+from mapper_api.interface.http.routers.taxonomy_mapper import router as taxonomy_router
+from mapper_api.interface.http.routers.fivews_mapper import router as fivews_router
+from mapper_api.interface.http.errors import validation_exception_handler, definitions_exception_handler, unhandled_exception_handler
+from mapper_api.domain.errors import ValidationError, DefinitionsNotLoadedError
+from mapper_api.interface.http.state import get_container
+from mapper_api.interface.di.mock_container import build_mock_container
+
+
+def create_mock_app() -> FastAPI:
+    app = FastAPI(title="Mapper API (Mock)")
+    app.include_router(taxonomy_router)
+    app.include_router(fivews_router)
+
+    # exception handlers
+    app.add_exception_handler(ValidationError, validation_exception_handler)
+    app.add_exception_handler(DefinitionsNotLoadedError, definitions_exception_handler)
+    app.add_exception_handler(Exception, unhandled_exception_handler)
+
+    # override DI to use mocks
+    app.dependency_overrides[get_container] = build_mock_container
+    return app
+
+
+app = create_mock_app()
+
+
+===== FILE: mapper_api/interface/http/routers/__init__.py =====
+"""Module: interface/http/routers/__init__.py
+
+Scaffold per spec. Implementation to follow."""
+
+
+===== FILE: mapper_api/interface/http/routers/fivews_mapper.py =====
+"""HTTP router for POST /5ws_mapper."""
+from __future__ import annotations
+from fastapi import APIRouter, Depends
+from mapper_api.application.dto.requests import CommonRequest
+from mapper_api.application.dto.responses import FiveWResponse
+from mapper_api.interface.di.container import Container
+from mapper_api.interface.http.state import get_container
+from mapper_api.domain.errors import DefinitionsNotLoadedError
+from mapper_api.application.use_cases.map_control_to_5ws import map_control_to_5ws
+
+router = APIRouter()
+
+
+@router.post('/5ws_mapper', response_model=FiveWResponse)
+async def fivews_mapper(req: CommonRequest, container: Container = Depends(get_container)):
+    if not container.definitions_loaded:
+        raise DefinitionsNotLoadedError("definitions not loaded")
+    record_id = req.header.recordId
+    items = map_control_to_5ws(
+        record_id=record_id,
+        control_description=req.data.controlDescription,
+        repo=container.definitions_repo,
+        llm=container.llm_client,
+        deployment=container.settings.AZURE_OPENAI_DEPLOYMENT,
+    )
+    return {
+        "header": {"recordId": record_id},
+        "data": {"5ws": items},
+    }
+
+
+===== FILE: mapper_api/interface/http/routers/taxonomy_mapper.py =====
+"""HTTP router for POST /taxonomy_mapper."""
+from __future__ import annotations
+from fastapi import APIRouter, Depends
+from mapper_api.application.dto.requests import CommonRequest
+from mapper_api.application.dto.responses import TaxonomyResponse
+from mapper_api.interface.di.container import Container
+from mapper_api.interface.http.state import get_container
+from mapper_api.domain.errors import DefinitionsNotLoadedError
+from mapper_api.application.use_cases.map_control_to_themes import map_control_to_themes
+
+router = APIRouter()
+
+
+@router.post('/taxonomy_mapper', response_model=TaxonomyResponse)
+async def taxonomy_mapper(req: CommonRequest, container: Container = Depends(get_container)):
+    if not container.definitions_loaded:
+        raise DefinitionsNotLoadedError("definitions not loaded")
+    record_id = req.header.recordId
+    items = map_control_to_themes(
+        record_id=record_id,
+        control_description=req.data.controlDescription,
+        repo=container.definitions_repo,
+        llm=container.llm_client,
+        deployment=container.settings.AZURE_OPENAI_DEPLOYMENT,
+    )
+    return {
+        "header": {"recordId": record_id},
+        "data": {"taxonomy": items},
+    }
+
+
+===== FILE: mapper_api/interface/http/state.py =====
+"""FastAPI dependency to access the DI container."""
+from __future__ import annotations
+from functools import lru_cache
+from mapper_api.interface.di.container import Container, build_container
+
+
+@lru_cache(maxsize=1)
+def get_container() -> Container:
+    return build_container()
+
+
+===== FILE: mapper_api/mock/__init__.py =====
+"""Mock infrastructure for local testing (LLM + definitions repo)."""
+
+
+===== FILE: mapper_api/mock/definitions_repo.py =====
+"""Mock DefinitionsRepository that reads local JSON files from mock/data."""
+from __future__ import annotations
+import json
+from pathlib import Path
+from typing import Sequence, Dict, Any
+from mapper_api.domain.repositories.definitions import DefinitionsRepository, ThemeRow
+
+
+class LocalFileDefinitionsRepository(DefinitionsRepository):
+    def __init__(self, base_dir: str | Path = None) -> None:
+        self._base = Path(base_dir) if base_dir else Path(__file__).parent / 'data'
+        self._themes = self._load_themes()
+        self._fivews = self._load_fivews()
+
+    def _load_themes(self) -> Sequence[ThemeRow]:
+        data = json.loads((self._base / 'taxonomy.json').read_text())
+        result: list[ThemeRow] = []
+        for r in data:
+            result.append(ThemeRow(
+                cluster_id=int(r['cluster_id']),
+                cluster=r['cluster'],
+                taxonomy_id=int(r['taxonomy_id']),
+                taxonomy=r['nfr_taxonomy'],
+                taxonomy_description=r['taxonomy_description'],
+                risk_theme_id=int(r['risk_theme_id']),
+                risk_theme=r['risk_theme'],
+                risk_theme_description=r['risk_theme_description'],
+                mapping_considerations=r['mapping_considerations'],
+            ))
+        return result
+
+    def _load_fivews(self) -> Sequence[Dict[str, Any]]:
+        obj = json.loads((self._base / '5ws.json').read_text())
+        order = ["who", "what", "when", "where", "why"]
+        return [{"name": k, "description": obj[k]} for k in order if k in obj]
+
+    def get_theme_rows(self) -> Sequence[ThemeRow]:
+        return self._themes
+
+    def get_fivews_rows(self) -> Sequence[Dict[str, Any]]:
+        return self._fivews
+
+
+===== FILE: mapper_api/mock/llm_client.py =====
+"""Static LLM client mock returning deterministic JSON matching provided schema."""
+from __future__ import annotations
+import json
+from typing import Mapping, Any, Optional
+
+
+class StaticLLMClient:
+    def json_schema_chat(
+        self,
+        *,
+        system: str,
+        user: str,
+        schema_name: str,
+        schema: Mapping[str, Any],
+        max_tokens: int,
+        temperature: float = 0.1,
+        context: Optional[dict] = None,
+        deployment: Optional[str] = None,
+    ) -> str:
+        props = schema.get('properties', {})
+        if 'taxonomy' in props:
+            # Try to extract allowed names from schema robustly
+            allowed: list[str] = []
+
+            def walk(node: Any):
+                nonlocal allowed
+                if isinstance(node, dict):
+                    if 'enum' in node and isinstance(node['enum'], list) and all(isinstance(x, str) for x in node['enum']):
+                        enum_vals = node['enum']
+                        five_set = {"who", "what", "when", "where", "why"}
+                        if set(enum_vals) != five_set and len(enum_vals) >= 3:
+                            # Prefer the longest non-5Ws enum found
+                            if len(enum_vals) > len(allowed):
+                                allowed = list(enum_vals)
+                    for v in node.values():
+                        walk(v)
+                elif isinstance(node, list):
+                    for item in node:
+                        walk(item)
+
+            walk(schema)
+
+            names = (allowed[:3] if len(allowed) >= 3 else ['Theme A', 'Theme B', 'Theme C'])
+            out = {
+                'taxonomy': [
+                    {'name': names[0], 'id': 1, 'score': 0.87, 'reasoning': 'high relevance'},
+                    {'name': names[1], 'id': 2, 'score': 0.44, 'reasoning': 'some relevance'},
+                    {'name': names[2], 'id': 3, 'score': 0.33, 'reasoning': 'possible relevance'},
+                ]
+            }
+            return json.dumps(out)
+        # else assume 5ws
+        out = {
+            'fivews': [
+                {'name': 'who', 'status': 'present', 'reasoning': 'explicit actor mentioned'},
+                {'name': 'what', 'status': 'present', 'reasoning': 'action described'},
+                {'name': 'when', 'status': 'missing', 'reasoning': 'no time given'},
+                {'name': 'where', 'status': 'present', 'reasoning': 'location/asset context'},
+                {'name': 'why', 'status': 'present', 'reasoning': 'purpose implied'},
+            ]
+        }
+        return json.dumps(out)
+
+
+===== FILE: pyproject.toml =====
+[project]
+name = "mapper-api"
+version = "0.1.0"
+description = "Mapper API (Clean Architecture, FastAPI, Azure OpenAI + Blob)"
+readme = "README.md"
+requires-python = ">=3.11"
+authors = [{name = "Team"}]
+
+[project.dependencies]
+fastapi = "*"
+"uvicorn[standard]" = "*"
+pydantic = ">=2.0"
+"pydantic-settings" = "*"
+openai = ">=1.40"
+azure-identity = "*"
+azure-storage-blob = "*"
+httpx = "*"
+tenacity = "*"
+
+
+===== FILE: tests/__init__.py =====
+"""Module: tests/__init__.py
+
+Scaffold per spec. Implementation to follow."""
+
+
+===== FILE: tests/integration/__init__.py =====
+"""Module: tests/integration/__init__.py
+
+Scaffold per spec. Implementation to follow."""
+
+
+===== FILE: tests/integration/test_routers.py =====
+import json
+from typing import Mapping, Any, Optional, Sequence
+from fastapi.testclient import TestClient
+from mapper_api.interface.http.api import create_app
+from mapper_api.interface.http.state import get_container
+from mapper_api.interface.di.container import Container
+from mapper_api.domain.repositories.definitions import DefinitionsRepository, ThemeRow
+
+
+class FakeRepo(DefinitionsRepository):
+    def get_theme_rows(self) -> Sequence[ThemeRow]:
+        return [
+            ThemeRow(cluster_id=1, cluster='A', taxonomy_id=1, taxonomy='NFR1', taxonomy_description='d',
+                     risk_theme_id=10, risk_theme='Theme A', risk_theme_description='d', mapping_considerations='m'),
+            ThemeRow(cluster_id=2, cluster='B', taxonomy_id=2, taxonomy='NFR2', taxonomy_description='d',
+                     risk_theme_id=20, risk_theme='Theme B', risk_theme_description='d', mapping_considerations='m'),
+            ThemeRow(cluster_id=3, cluster='C', taxonomy_id=3, taxonomy='NFR3', taxonomy_description='d',
+                     risk_theme_id=30, risk_theme='Theme C', risk_theme_description='d', mapping_considerations='m'),
+        ]
+
+    def get_fivews_rows(self):
+        return [
+            {"name": "who", "description": ""},
+            {"name": "what", "description": ""},
+            {"name": "when", "description": ""},
+            {"name": "where", "description": ""},
+            {"name": "why", "description": ""},
+        ]
+
+
+class FakeLLM:
+    def json_schema_chat(self, *, system: str, user: str, schema_name: str, schema: Mapping[str, Any], max_tokens: int, temperature: float = 0.1, context: Optional[dict] = None, deployment: Optional[str] = None) -> str:
+        if 'taxonomy' in schema.get('properties', {}):
+            return json.dumps({
+                'taxonomy': [
+                    {'name': 'Theme C', 'id': 30, 'score': 0.33, 'reasoning': 'r'},
+                    {'name': 'Theme A', 'id': 10, 'score': 0.87, 'reasoning': 'r'},
+                    {'name': 'Theme B', 'id': 20, 'score': 0.44, 'reasoning': 'r'},
+                ]
+            })
+        else:
+            return json.dumps({
+                'fivews': [
+                    {'name': 'who', 'status': 'present', 'reasoning': 'r'},
+                    {'name': 'what', 'status': 'present', 'reasoning': 'r'},
+                    {'name': 'when', 'status': 'missing', 'reasoning': 'r'},
+                    {'name': 'where', 'status': 'present', 'reasoning': 'r'},
+                    {'name': 'why', 'status': 'present', 'reasoning': 'r'},
+                ]
+            })
+
+
+def test_routers_with_override():
+    app = create_app()
+
+    def override_container():
+        return Container(
+            settings=type('S', (), {'AZURE_OPENAI_DEPLOYMENT': 'd'})(),
+            definitions_repo=FakeRepo(),
+            llm_client=FakeLLM(),
+            definitions_loaded=True,
+        )
+
+    app.dependency_overrides[get_container] = override_container
+    c = TestClient(app)
+
+    r = c.post('/taxonomy_mapper', json={
+        'header': {'recordId': 'r1'},
+        'data': {'controlDescription': 'text'}
+    })
+    assert r.status_code == 200
+    assert len(r.json()['data']['taxonomy']) == 3
+
+    r = c.post('/5ws_mapper', json={
+        'header': {'recordId': 'r2'},
+        'data': {'controlDescription': 'text'}
+    })
+    assert r.status_code == 200
+    assert list(item['name'] for item in r.json()['data']['5ws']) == ['who', 'what', 'when', 'where', 'why']
+
+
+===== FILE: tests/unit/__init__.py =====
+"""Module: tests/unit/__init__.py
+
+Scaffold per spec. Implementation to follow."""
+
+
+===== FILE: tests/unit/test_prompts.py =====
+from mapper_api.application.prompts import taxonomy, fivews
+from mapper_api.domain.repositories.definitions import ThemeRow
+
+
+def test_taxonomy_prompt_contains_rows_and_control():
+    rows = [
+        ThemeRow(cluster_id=1, cluster='A', taxonomy_id=1, taxonomy='NFR1', taxonomy_description='desc',
+                 risk_theme_id=10, risk_theme='Theme A', risk_theme_description='d', mapping_considerations='m'),
+        ThemeRow(cluster_id=2, cluster='B', taxonomy_id=2, taxonomy='NFR2', taxonomy_description='desc',
+                 risk_theme_id=20, risk_theme='Theme B', risk_theme_description='d', mapping_considerations='m'),
+    ]
+    prompt = taxonomy.build_user_prompt('control text', rows)
+    assert 'Theme A' in prompt and 'Theme B' in prompt
+    assert 'control text' in prompt
+
+
+def test_fivews_prompt_contains_defs_and_control():
+    defs = [
+        {"name": "who", "description": "who desc"},
+        {"name": "what", "description": "what desc"},
+    ]
+    prompt = fivews.build_user_prompt('control text', defs)
+    assert 'who desc' in prompt and 'what desc' in prompt
+    assert 'control text' in prompt
+
+
+===== FILE: tests/unit/test_use_cases.py =====
+import json
+from typing import Mapping, Any, Optional, Sequence
+from mapper_api.application.use_cases.map_control_to_themes import map_control_to_themes
+from mapper_api.application.use_cases.map_control_to_5ws import map_control_to_5ws
+from mapper_api.domain.repositories.definitions import DefinitionsRepository, ThemeRow
+
+
+class FakeRepo(DefinitionsRepository):
+    def get_theme_rows(self) -> Sequence[ThemeRow]:
+        return [
+            ThemeRow(cluster_id=1, cluster='A', taxonomy_id=1, taxonomy='NFR1', taxonomy_description='d',
+                     risk_theme_id=10, risk_theme='Theme A', risk_theme_description='d', mapping_considerations='m'),
+            ThemeRow(cluster_id=2, cluster='B', taxonomy_id=2, taxonomy='NFR2', taxonomy_description='d',
+                     risk_theme_id=20, risk_theme='Theme B', risk_theme_description='d', mapping_considerations='m'),
+            ThemeRow(cluster_id=3, cluster='C', taxonomy_id=3, taxonomy='NFR3', taxonomy_description='d',
+                     risk_theme_id=30, risk_theme='Theme C', risk_theme_description='d', mapping_considerations='m'),
+        ]
+
+    def get_fivews_rows(self):
+        return [
+            {"name": "who", "description": ""},
+            {"name": "what", "description": ""},
+            {"name": "when", "description": ""},
+            {"name": "where", "description": ""},
+            {"name": "why", "description": ""},
+        ]
+
+
+class FakeLLM:
+    def json_schema_chat(self, *, system: str, user: str, schema_name: str, schema: Mapping[str, Any], max_tokens: int, temperature: float = 0.1, context: Optional[dict] = None, deployment: Optional[str] = None) -> str:
+        if 'taxonomy' in schema.get('properties', {}):
+            return json.dumps({
+                'taxonomy': [
+                    {'name': 'Theme C', 'id': 30, 'score': 0.33, 'reasoning': 'r'},
+                    {'name': 'Theme A', 'id': 10, 'score': 0.87, 'reasoning': 'r'},
+                    {'name': 'Theme B', 'id': 20, 'score': 0.44, 'reasoning': 'r'},
+                ]
+            })
+        else:
+            return json.dumps({
+                'fivews': [
+                    {'name': 'who', 'status': 'present', 'reasoning': 'r'},
+                    {'name': 'what', 'status': 'present', 'reasoning': 'r'},
+                    {'name': 'when', 'status': 'missing', 'reasoning': 'r'},
+                    {'name': 'where', 'status': 'present', 'reasoning': 'r'},
+                    {'name': 'why', 'status': 'present', 'reasoning': 'r'},
+                ]
+            })
+
+
+def test_map_control_to_themes_sorts_and_limits():
+    out = map_control_to_themes(
+        record_id='r1', control_description='text', repo=FakeRepo(), llm=FakeLLM(), deployment='d'
+    )
+    assert isinstance(out, list)
+    assert len(out) == 3
+    scores = [i['score'] for i in out]
+    assert scores == sorted(scores, reverse=True)
+
+
+def test_map_control_to_5ws_order_and_alias():
+    out = map_control_to_5ws(
+        record_id='r2', control_description='text', repo=FakeRepo(), llm=FakeLLM(), deployment='d'
+    )
+    assert isinstance(out, list)
+    assert [item['name'] for item in out] == ['who', 'what', 'when', 'where', 'why']
