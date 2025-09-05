@@ -99,3 +99,44 @@ So that I can ensure code quality, maintainability, and reliability across all l
 **Test Structure**: tests/ directory organized by Clean Architecture layers
 
 **Mock Patterns**: Examples for Azure OpenAI client, blob storage, and repository mocking
+
+
+import pandas as pd
+import matplotlib.pyplot as plt
+import re
+
+# Example dataframe
+data = {
+    "control_description": [
+        "This control defines [WHO] is responsible.",
+        "We need to ask What: happens in failure.",
+        "WHEN the process fails, escalation is required.",
+        "The report must explain (why) the exception occurred.",
+        "Nothing mentioned here."
+    ]
+}
+df = pd.DataFrame(data)
+
+# Simplified regex patterns
+patterns = {
+    "Who": r"[\[\(\s]*who[\]\)\s:]*",
+    "What": r"[\[\(\s]*what[\]\)\s:]*",
+    "When": r"[\[\(\s]*when[\]\)\s:]*",
+    "Where": r"[\[\(\s]*where[\]\)\s:]*",
+    "Why": r"[\[\(\s]*why[\]\)\s:]*"
+}
+
+# Count occurrences
+counts = {
+    w: df["control_description"].str.contains(pat, flags=re.IGNORECASE, regex=True).sum()
+    for w, pat in patterns.items()
+}
+
+# Convert to DataFrame for plotting
+counts_df = pd.DataFrame(list(counts.items()), columns=["W", "Count"])
+
+# Plot
+counts_df.plot(kind="bar", x="W", y="Count", legend=False, rot=0)
+plt.title("Presence of 5Ws in Control Descriptions")
+plt.ylabel("Count")
+plt.show()
