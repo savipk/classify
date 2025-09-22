@@ -15,8 +15,3 @@ class DefinitionsUnavailableError(MapperDomainError):
 
 class LLMProcessingError(MapperDomainError):
     """Raised when LLM processing fails or returns invalid data."""
-
-
-# Keep original names for backward compatibility during transition
-ValidationError = ControlValidationError
-DefinitionsNotLoadedError = DefinitionsUnavailableError

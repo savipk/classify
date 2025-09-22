@@ -9,19 +9,13 @@ from mapper_api.api.errors import (
     definitions_unavailable_exception_handler, 
     llm_processing_exception_handler,
     domain_exception_handler,
-    unhandled_exception_handler,
-    # Legacy handlers
-    validation_exception_handler, 
-    definitions_exception_handler
+    unhandled_exception_handler
 )
 from mapper_api.domain.errors import (
     MapperDomainError,
     ControlValidationError,
     DefinitionsUnavailableError,
-    LLMProcessingError,
-    # Legacy names
-    ValidationError, 
-    DefinitionsNotLoadedError
+    LLMProcessingError
 )
 from mapper_api.config.settings import Settings
 
@@ -39,16 +33,12 @@ def create_app() -> FastAPI:
     app.include_router(taxonomy_router, prefix=f"/{settings.API_VERSION}")
     app.include_router(fivews_router, prefix=f"/{settings.API_VERSION}")
 
-    # New cleaner exception handlers
+    # Exception handlers
     app.add_exception_handler(ControlValidationError, control_validation_exception_handler)
     app.add_exception_handler(DefinitionsUnavailableError, definitions_unavailable_exception_handler)
     app.add_exception_handler(LLMProcessingError, llm_processing_exception_handler)
     app.add_exception_handler(MapperDomainError, domain_exception_handler)
-    
-    # Keep legacy handlers for backward compatibility
-    app.add_exception_handler(ValidationError, validation_exception_handler)
-    app.add_exception_handler(RequestValidationError, validation_exception_handler)
-    app.add_exception_handler(DefinitionsNotLoadedError, definitions_exception_handler)
+    app.add_exception_handler(RequestValidationError, control_validation_exception_handler)
     
     # Catch-all handler
     app.add_exception_handler(Exception, unhandled_exception_handler)

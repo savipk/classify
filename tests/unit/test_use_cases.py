@@ -1,10 +1,11 @@
 import json
 import pytest
 from typing import Mapping, Any, Optional, Sequence
-from mapper_api.application.use_cases.map_control_to_themes import map_control_to_themes, ClassifyControlToThemes
-from mapper_api.application.use_cases.map_control_to_5ws import map_control_to_5ws, ClassifyControlTo5Ws
+from mapper_api.application.use_cases.map_control_to_themes import ClassifyControlToThemes
+from mapper_api.application.use_cases.map_control_to_5ws import ClassifyControlTo5Ws
+from mapper_api.application.dto.use_case_requests import TaxonomyMappingRequest, FiveWsMappingRequest
 from mapper_api.domain.repositories.definitions import DefinitionsRepository, ThemeRow
-from mapper_api.domain.errors import ValidationError, DefinitionsNotLoadedError
+from mapper_api.domain.errors import ControlValidationError, DefinitionsUnavailableError
 
 
 class FakeRepo(DefinitionsRepository):
@@ -67,9 +68,13 @@ class FakeLLM:
 
 
 def test_map_control_to_5ws():
-    out = map_control_to_5ws(
-        record_id='r2', control_description='text', repo=FakeRepo(), llm=FakeLLM(), deployment='d'
+    request = FiveWsMappingRequest(
+        record_id='r2', 
+        control_description='text', 
+        deployment='d'
     )
+    use_case = ClassifyControlTo5Ws(repo=FakeRepo(), llm=FakeLLM())
+    out = use_case.execute(request)
     assert isinstance(out, list)
     assert [item['name'] for item in out] == ['who', 'what', 'when', 'where', 'why']
     assert len(out) == 5  # 5Ws should have 5 items, not 3
@@ -86,23 +91,23 @@ class TestMapControlToThemesEdgeCases:
     
     def test_empty_control_description_raises_validation_error(self):
         with pytest.raises(ValueError, match="control description must not be empty"):
-            map_control_to_themes(
+            request = TaxonomyMappingRequest(
                 record_id='r1', 
                 control_description='', 
-                repo=FakeRepo(), 
-                llm=FakeLLM(), 
                 deployment='d'
             )
+            use_case = ClassifyControlToThemes.from_defs(FakeRepo(), FakeLLM())
+            use_case.execute(request)
     
     def test_whitespace_only_control_description_raises_validation_error(self):
         with pytest.raises(ValueError, match="control description must not be empty"):
-            map_control_to_themes(
+            request = TaxonomyMappingRequest(
                 record_id='r1', 
                 control_description='   \t\n  ', 
-                repo=FakeRepo(), 
-                llm=FakeLLM(), 
                 deployment='d'
             )
+            use_case = ClassifyControlToThemes.from_defs(FakeRepo(), FakeLLM())
+            use_case.execute(request)
     
     def test_empty_theme_rows_raises_definitions_not_loaded(self):
         class EmptyRepo(DefinitionsRepository):
@@ -111,38 +116,38 @@ class TestMapControlToThemesEdgeCases:
             def get_fivews_rows(self):
                 return []
         
-        with pytest.raises(DefinitionsNotLoadedError, match="taxonomy definitions not loaded"):
-            map_control_to_themes(
+        with pytest.raises(DefinitionsUnavailableError, match="taxonomy definitions not loaded"):
+            request = TaxonomyMappingRequest(
                 record_id='r1',
                 control_description='valid text',
-                repo=EmptyRepo(),
-                llm=FakeLLM(),
                 deployment='d'
             )
+            use_case = ClassifyControlToThemes.from_defs(EmptyRepo(), FakeLLM())
+            use_case.execute(request)
     
     def test_llm_invalid_json_raises_validation_error(self):
         class BadLLM:
             def json_schema_chat(self, **kwargs):
                 return "invalid json"
         
-        with pytest.raises(ValidationError, match="LLM output validation failed"):
-            map_control_to_themes(
+        with pytest.raises(ControlValidationError, match="LLM output validation failed"):
+            request = TaxonomyMappingRequest(
                 record_id='r1',
                 control_description='valid text',
-                repo=FakeRepo(),
-                llm=BadLLM(),
                 deployment='d'
             )
+            use_case = ClassifyControlToThemes.from_defs(FakeRepo(), BadLLM())
+            use_case.execute(request)
     
     def test_long_control_description_handled(self):
         long_text = "A" * 5000  # Very long control description
-        result = map_control_to_themes(
+        request = TaxonomyMappingRequest(
             record_id='r1',
             control_description=long_text,
-            repo=FakeRepo(),
-            llm=FakeLLM(),
             deployment='d'
         )
+        use_case = ClassifyControlToThemes.from_defs(FakeRepo(), FakeLLM())
+        result = use_case.execute(request)
         assert isinstance(result, list)
         assert len(result) == 3  # Should still limit to top 3
 
@@ -152,24 +157,24 @@ class TestMapControlToFiveWsEdgeCases:
     """Test edge cases and error handling for 5Ws mapping."""
     
     def test_empty_control_description_raises_validation_error(self):
-        with pytest.raises(ValidationError, match="controlDescription must not be empty"):
-            map_control_to_5ws(
+        with pytest.raises(ValueError, match="control description must not be empty"):
+            request = FiveWsMappingRequest(
                 record_id='r1', 
                 control_description='', 
-                repo=FakeRepo(), 
-                llm=FakeLLM(), 
                 deployment='d'
             )
+            use_case = ClassifyControlTo5Ws(repo=FakeRepo(), llm=FakeLLM())
+            use_case.execute(request)
     
     def test_whitespace_only_control_description_raises_validation_error(self):
-        with pytest.raises(ValidationError, match="controlDescription must not be empty"):
-            map_control_to_5ws(
+        with pytest.raises(ValueError, match="control description must not be empty"):
+            request = FiveWsMappingRequest(
                 record_id='r1', 
                 control_description='   \t\n  ', 
-                repo=FakeRepo(), 
-                llm=FakeLLM(), 
                 deployment='d'
             )
+            use_case = ClassifyControlTo5Ws(repo=FakeRepo(), llm=FakeLLM())
+            use_case.execute(request)
     
     def test_empty_fivews_definitions_raises_error(self):
         class EmptyRepo(DefinitionsRepository):
@@ -178,42 +183,42 @@ class TestMapControlToFiveWsEdgeCases:
             def get_fivews_rows(self):
                 return []
         
-        with pytest.raises(DefinitionsNotLoadedError, match="5Ws definitions not loaded"):
-            map_control_to_5ws(
+        with pytest.raises(DefinitionsUnavailableError, match="5Ws definitions not loaded"):
+            request = FiveWsMappingRequest(
                 record_id='r1',
                 control_description='valid text',
-                repo=EmptyRepo(),
-                llm=FakeLLM(),
                 deployment='d'
             )
+            use_case = ClassifyControlTo5Ws(repo=EmptyRepo(), llm=FakeLLM())
+            use_case.execute(request)
     
     def test_llm_invalid_json_raises_validation_error(self):
         class BadLLM:
             def json_schema_chat(self, **kwargs):
                 return "invalid json"
         
-        with pytest.raises(ValidationError, match="LLM output validation failed"):
-            map_control_to_5ws(
+        with pytest.raises(ControlValidationError, match="LLM output validation failed"):
+            request = FiveWsMappingRequest(
                 record_id='r1',
                 control_description='valid text',
-                repo=FakeRepo(),
-                llm=BadLLM(),
                 deployment='d'
             )
+            use_case = ClassifyControlTo5Ws(repo=FakeRepo(), llm=BadLLM())
+            use_case.execute(request)
     
     def test_llm_missing_fivews_field_raises_validation_error(self):
         class BadLLM:
             def json_schema_chat(self, **kwargs):
                 return json.dumps({"wrong_field": []})
         
-        with pytest.raises(ValidationError, match="LLM output validation failed"):
-            map_control_to_5ws(
+        with pytest.raises(ControlValidationError, match="LLM output validation failed"):
+            request = FiveWsMappingRequest(
                 record_id='r1',
                 control_description='valid text',
-                repo=FakeRepo(),
-                llm=BadLLM(),
                 deployment='d'
             )
+            use_case = ClassifyControlTo5Ws(repo=FakeRepo(), llm=BadLLM())
+            use_case.execute(request)
     
     def test_ordering_maintained_despite_llm_disorder(self):
         class DisorderedLLM:
@@ -229,13 +234,13 @@ class TestMapControlToFiveWsEdgeCases:
                     ]
                 })
         
-        result = map_control_to_5ws(
+        request = FiveWsMappingRequest(
             record_id='r1',
             control_description='valid text',
-            repo=FakeRepo(),
-            llm=DisorderedLLM(),
             deployment='d'
         )
+        use_case = ClassifyControlTo5Ws(repo=FakeRepo(), llm=DisorderedLLM())
+        result = use_case.execute(request)
         
         # Should be reordered correctly
         names = [item['name'] for item in result]
@@ -259,13 +264,13 @@ class TestMapControlToFiveWsEdgeCases:
                 })
         
         trace_llm = TraceLLM()
-        map_control_to_5ws(
+        request = FiveWsMappingRequest(
             record_id='test-trace-123',
             control_description='valid text',
-            repo=FakeRepo(),
-            llm=trace_llm,
             deployment='d'
         )
+        use_case = ClassifyControlTo5Ws(repo=FakeRepo(), llm=trace_llm)
+        use_case.execute(request)
         
         assert trace_llm.last_context == {"trace_id": "test-trace-123"}
 
@@ -287,7 +292,7 @@ class TestClassifyControlToThemesClass:
             def get_fivews_rows(self):
                 return []
         
-        with pytest.raises(DefinitionsNotLoadedError):
+        with pytest.raises(DefinitionsUnavailableError):
             ClassifyControlToThemes.from_defs(EmptyRepo(), FakeLLM())
 
 

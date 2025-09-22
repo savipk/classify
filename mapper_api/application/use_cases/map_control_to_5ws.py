@@ -1,14 +1,12 @@
 """Use case: extract 5Ws presence with reasoning using LLM with strict JSON."""
 from __future__ import annotations
-import json
 from dataclasses import dataclass
-from typing import Sequence
 from mapper_api.application.dto.output_schemas import FiveWOut
 from mapper_api.application.ports.llm import LLMClient
 from mapper_api.application.prompts import fivews as fivews_prompts
 from mapper_api.domain.entities.control import Control
 from mapper_api.domain.repositories.definitions import DefinitionsRepository
-from mapper_api.domain.errors import ValidationError, DefinitionsNotLoadedError
+from mapper_api.domain.errors import ControlValidationError, DefinitionsUnavailableError
 from mapper_api.application.dto.use_case_requests import FiveWsMappingRequest
 
 _ORDER = ["who", "what", "when", "where", "why"]
@@ -16,18 +14,36 @@ _ORDER = ["who", "what", "when", "where", "why"]
 
 @dataclass
 class ClassifyControlTo5Ws:
+    """
+    Use case for extracting 5Ws presence from controls.
+    
+    Following EcomApp's pattern of injecting services and keeping business logic clean.
+    """
     repo: DefinitionsRepository
     llm: LLMClient
 
-    def execute(self, request: FiveWsMappingRequest) -> list:
-        ctrl = Control(text=request.control_description)
-        if not ctrl.text or not ctrl.text.strip():
-            raise ValidationError("controlDescription must not be empty")
+    @classmethod
+    def from_defs(cls, repo: DefinitionsRepository, llm: LLMClient):
+        """Factory method to create use case instance."""
+        return cls(repo=repo, llm=llm)
 
+    def execute(self, request: FiveWsMappingRequest) -> list:
+        """
+        Execute the 5Ws extraction use case.
+        
+        Validates control text and extracts presence/absence of 5Ws elements
+        with reasoning using LLM.
+        """
+        # Validate control using domain entity
+        ctrl = Control(text=request.control_description)
+        ctrl.ensure_not_empty()
+
+        # Get 5Ws definitions
         defs = self.repo.get_fivews_rows()
         if not defs:
-            raise DefinitionsNotLoadedError("5Ws definitions not loaded")
+            raise DefinitionsUnavailableError("5Ws definitions not loaded")
 
+        # Build LLM request
         schema = FiveWOut.model_json_schema()
         system_prompt = fivews_prompts.SYSTEM
         user_prompt = fivews_prompts.build_user_prompt(ctrl.text, defs)
@@ -46,7 +62,7 @@ class ClassifyControlTo5Ws:
         try:
             data = FiveWOut.model_validate_json(raw)
         except Exception as e:
-            raise ValidationError(f"LLM output validation failed: {e}")
+            raise ControlValidationError(f"LLM output validation failed: {e}")
 
         ordered = sorted(data.fivews, key=lambda x: _ORDER.index(x.name))
         return [
@@ -54,26 +70,3 @@ class ClassifyControlTo5Ws:
             for i in ordered
         ]
 
-
-    @classmethod
-    def from_defs(cls, repo: DefinitionsRepository, llm: LLMClient):
-        """Factory method to create use case instance."""
-        return cls(repo=repo, llm=llm)
-
-
-def map_control_to_5ws(
-    *,
-    record_id: str,
-    control_description: str,
-    repo: DefinitionsRepository,
-    llm: LLMClient,
-    deployment: str,
-) -> dict:
-    """Legacy function interface - kept for backward compatibility."""
-    request = FiveWsMappingRequest(
-        record_id=record_id,
-        control_description=control_description,
-        deployment=deployment
-    )
-    use_case = ClassifyControlTo5Ws(repo=repo, llm=llm)
-    return use_case.execute(request)

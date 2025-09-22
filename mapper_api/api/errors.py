@@ -6,10 +6,7 @@ from mapper_api.domain.errors import (
     MapperDomainError, 
     ControlValidationError, 
     DefinitionsUnavailableError,
-    LLMProcessingError,
-    # Keep old names for backward compatibility
-    ValidationError, 
-    DefinitionsNotLoadedError
+    LLMProcessingError
 )
 
 
@@ -35,17 +32,6 @@ async def domain_exception_handler(request: Request, exc: MapperDomainError):
     """Handle general domain errors with 400 status."""
     record_id = request.headers.get('x-trace-id')
     return JSONResponse(status_code=400, content={"error": str(exc), "traceId": record_id})
-
-
-# Legacy handlers for backward compatibility
-async def validation_exception_handler(request: Request, exc: ValidationError):
-    record_id = request.headers.get('x-trace-id')
-    return JSONResponse(status_code=400, content={"error": str(exc), "traceId": record_id})
-
-
-async def definitions_exception_handler(request: Request, exc: DefinitionsNotLoadedError):
-    record_id = request.headers.get('x-trace-id')
-    return JSONResponse(status_code=503, content={"error": str(exc), "traceId": record_id})
 
 
 async def unhandled_exception_handler(request: Request, exc: Exception):

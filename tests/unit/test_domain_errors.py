@@ -1,6 +1,6 @@
 """Tests for domain errors and exceptions."""
 import pytest
-from mapper_api.domain.errors import MapperDomainError, ValidationError, DefinitionsNotLoadedError
+from mapper_api.domain.errors import MapperDomainError, ControlValidationError, DefinitionsUnavailableError
 
 
 class TestMapperDomainError:
@@ -14,26 +14,26 @@ class TestMapperDomainError:
             raise MapperDomainError("test message")
     
 
-class TestValidationError:
-    """Test ValidationError exception."""
+class TestControlValidationError:
+    """Test ControlValidationError exception."""
     
     def test_inherits_from_domain_error(self):
-        assert issubclass(ValidationError, MapperDomainError)
-        assert issubclass(ValidationError, Exception)
+        assert issubclass(ControlValidationError, MapperDomainError)
+        assert issubclass(ControlValidationError, Exception)
     
     def test_can_be_raised_with_message(self):
-        with pytest.raises(ValidationError, match="validation failed"):
-            raise ValidationError("validation failed")
+        with pytest.raises(ControlValidationError, match="validation failed"):
+            raise ControlValidationError("validation failed")
     
 
-class TestDefinitionsNotLoadedError:
-    """Test DefinitionsNotLoadedError exception."""
+class TestDefinitionsUnavailableError:
+    """Test DefinitionsUnavailableError exception."""
     
     def test_inherits_from_domain_error(self):
-        assert issubclass(DefinitionsNotLoadedError, MapperDomainError)
-        assert issubclass(DefinitionsNotLoadedError, Exception)
+        assert issubclass(DefinitionsUnavailableError, MapperDomainError)
+        assert issubclass(DefinitionsUnavailableError, Exception)
     
     def test_can_be_raised_with_message(self):
-        with pytest.raises(DefinitionsNotLoadedError, match="definitions not available"):
-            raise DefinitionsNotLoadedError("definitions not available")
+        with pytest.raises(DefinitionsUnavailableError, match="definitions not available"):
+            raise DefinitionsUnavailableError("definitions not available")
   
