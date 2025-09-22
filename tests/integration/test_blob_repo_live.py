@@ -1,33 +1,25 @@
-import os
 import pytest
+from pydantic import ValidationError
 
 from mapper_api.infrastructure.azure.blob_definitions_repo import BlobDefinitionsRepository
-
-
-def _env(name: str) -> str | None:
-    v = os.environ.get(name)
-    return v if v and v.strip() else None
+from mapper_api.config.settings import Settings
 
 
 @pytest.mark.integration
 def test_blob_definitions_repo_live_reads_from_azure():
-    required = {
-        'STORAGE_ACCOUNT_NAME': _env('STORAGE_ACCOUNT_NAME'),
-        'STORAGE_CONTAINER_NAME': _env('STORAGE_CONTAINER_NAME'),
-        'AZURE_TENANT_ID': _env('AZURE_TENANT_ID'),
-        'AZURE_CLIENT_ID': _env('AZURE_CLIENT_ID'),
-        'AZURE_CLIENT_SECRET': _env('AZURE_CLIENT_SECRET'),
-    }
-    missing = [k for k, v in required.items() if not v]
-    if missing:
-        pytest.skip(f"Missing env vars for live Azure blob test: {', '.join(missing)}")
+    try:
+        settings = Settings()
+    except ValidationError as e:
+        # Skip test if required environment variables are not set
+        missing_fields = [error['loc'][0] for error in e.errors() if error['type'] == 'missing']
+        pytest.skip(f"Missing env vars for live Azure blob test: {', '.join(missing_fields)}")
 
     repo = BlobDefinitionsRepository(
-        account_name=required['STORAGE_ACCOUNT_NAME'],
-        container_name=required['STORAGE_CONTAINER_NAME'],
-        tenant_id=required['AZURE_TENANT_ID'],
-        client_id=required['AZURE_CLIENT_ID'],
-        client_secret=required['AZURE_CLIENT_SECRET'],
+        account_name=settings.STORAGE_ACCOUNT_NAME,
+        container_name=settings.STORAGE_CONTAINER_NAME,
+        tenant_id=settings.AZURE_TENANT_ID,
+        client_id=settings.AZURE_CLIENT_ID,
+        client_secret=settings.AZURE_CLIENT_SECRET,
     )
 
     themes = repo.get_theme_rows()
