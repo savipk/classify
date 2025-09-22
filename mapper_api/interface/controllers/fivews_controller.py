@@ -45,7 +45,10 @@ class FiveWsController:
         try:
             result = self.classify_use_case.execute(use_case_request)
         except Exception as e:
-            raise ControlValidationError(f"Failed to process control description: {str(e)}")
+            # Provide more specific error information for debugging
+            error_type = type(e).__name__
+            error_msg = str(e)
+            raise ControlValidationError(f"Failed to process control description: {error_type}: {error_msg}")
         
         # Transform use case result to web response
         return FiveWResponse(
