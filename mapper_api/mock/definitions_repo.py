@@ -2,8 +2,12 @@
 from __future__ import annotations
 import json
 from pathlib import Path
-from typing import Sequence, Dict, Any
+from typing import Sequence, Dict, Any, List
 from mapper_api.domain.repositories.definitions import DefinitionsRepository, ThemeRow
+from mapper_api.domain.entities.cluster import Cluster
+from mapper_api.domain.entities.taxonomy import Taxonomy
+from mapper_api.domain.entities.risk_theme import RiskTheme
+from mapper_api.domain.services.taxonomy_service import TaxonomyService
 
 
 class LocalFileDefinitionsRepository(DefinitionsRepository):
@@ -11,6 +15,8 @@ class LocalFileDefinitionsRepository(DefinitionsRepository):
         self._base = Path(base_dir) if base_dir else Path(__file__).parent / 'data'
         self._themes = self._load_themes()
         self._fivews = self._load_fivews()
+        self._taxonomy_service = TaxonomyService()
+        self._domain_hierarchy = self._taxonomy_service.build_domain_hierarchy(self._themes)
 
     def _load_themes(self) -> Sequence[ThemeRow]:
         data = json.loads((self._base / 'taxonomy.json').read_text())
@@ -39,3 +45,16 @@ class LocalFileDefinitionsRepository(DefinitionsRepository):
 
     def get_fivews_rows(self) -> Sequence[Dict[str, Any]]:
         return self._fivews
+
+    # Domain-oriented methods
+    def get_clusters(self) -> List[Cluster]:
+        """Return all clusters as domain entities."""
+        return self._domain_hierarchy["clusters"]
+
+    def get_taxonomies(self) -> List[Taxonomy]:
+        """Return all taxonomies as domain entities."""
+        return self._domain_hierarchy["taxonomies"]
+
+    def get_risk_themes(self) -> List[RiskTheme]:
+        """Return all risk themes as domain entities."""
+        return self._domain_hierarchy["risk_themes"]

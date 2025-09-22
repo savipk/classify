@@ -1,10 +1,14 @@
 """Azure Blob adapter to load taxonomy.json and 5ws.json once at startup."""
 from __future__ import annotations
 import json
-from typing import Sequence, Dict, Any, Optional
+from typing import Sequence, Dict, Any, Optional, List
 from azure.identity import ClientSecretCredential
 from azure.storage.blob import BlobServiceClient
 from mapper_api.domain.repositories.definitions import DefinitionsRepository, ThemeRow
+from mapper_api.domain.entities.cluster import Cluster
+from mapper_api.domain.entities.taxonomy import Taxonomy
+from mapper_api.domain.entities.risk_theme import RiskTheme
+from mapper_api.domain.services.taxonomy_service import TaxonomyService
 
 
 class BlobDefinitionsRepository(DefinitionsRepository):
@@ -25,11 +29,16 @@ class BlobDefinitionsRepository(DefinitionsRepository):
         self._container = self._service.get_container_client(container_name)
         self._themes: Optional[Sequence[ThemeRow]] = None
         self._fivews: Optional[Sequence[Dict[str, Any]]] = None
+        self._taxonomy_service = TaxonomyService()
+        self._domain_hierarchy: Optional[Dict[str, List]] = None
         self._load()
 
     def _load(self) -> None:
         self._themes = self._load_themes()
         self._fivews = self._load_fivews()
+        # Build domain hierarchy after loading raw data
+        if self._themes:
+            self._domain_hierarchy = self._taxonomy_service.build_domain_hierarchy(self._themes)
 
     def _load_themes(self) -> Sequence[ThemeRow]:
         blob = self._container.get_blob_client("taxonomy.json")
@@ -64,3 +73,22 @@ class BlobDefinitionsRepository(DefinitionsRepository):
 
     def get_fivews_rows(self) -> Sequence[Dict[str, Any]]:
         return self._fivews or []
+
+    # Domain-oriented methods
+    def get_clusters(self) -> List[Cluster]:
+        """Return all clusters as domain entities."""
+        if not self._domain_hierarchy:
+            return []
+        return self._domain_hierarchy["clusters"]
+
+    def get_taxonomies(self) -> List[Taxonomy]:
+        """Return all taxonomies as domain entities."""
+        if not self._domain_hierarchy:
+            return []
+        return self._domain_hierarchy["taxonomies"]
+
+    def get_risk_themes(self) -> List[RiskTheme]:
+        """Return all risk themes as domain entities."""
+        if not self._domain_hierarchy:
+            return []
+        return self._domain_hierarchy["risk_themes"]

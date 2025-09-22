@@ -9,17 +9,18 @@ from mapper_api.application.prompts import fivews as fivews_prompts
 from mapper_api.domain.entities.control import Control
 from mapper_api.domain.repositories.definitions import DefinitionsRepository
 from mapper_api.domain.errors import ValidationError, DefinitionsNotLoadedError
+from mapper_api.application.dto.use_case_requests import FiveWsMappingRequest
 
 _ORDER = ["who", "what", "when", "where", "why"]
 
 
 @dataclass
-class ClassifyControlToFiveWs:
+class ClassifyControlTo5Ws:
     repo: DefinitionsRepository
     llm: LLMClient
 
-    def run(self, *, record_id: str, control_description: str, deployment: str):
-        ctrl = Control(text=control_description)
+    def execute(self, request: FiveWsMappingRequest) -> list:
+        ctrl = Control(text=request.control_description)
         if not ctrl.text or not ctrl.text.strip():
             raise ValidationError("controlDescription must not be empty")
 
@@ -38,8 +39,8 @@ class ClassifyControlToFiveWs:
             schema=schema,
             max_tokens=400,
             temperature=0.1,
-            context={"trace_id": record_id},
-            deployment=deployment,
+            context={"trace_id": request.record_id},
+            deployment=request.deployment,
         )
 
         try:
@@ -54,6 +55,12 @@ class ClassifyControlToFiveWs:
         ]
 
 
+    @classmethod
+    def from_defs(cls, repo: DefinitionsRepository, llm: LLMClient):
+        """Factory method to create use case instance."""
+        return cls(repo=repo, llm=llm)
+
+
 def map_control_to_5ws(
     *,
     record_id: str,
@@ -62,5 +69,11 @@ def map_control_to_5ws(
     llm: LLMClient,
     deployment: str,
 ) -> dict:
-    use_case = ClassifyControlToFiveWs(repo=repo, llm=llm)
-    return use_case.run(record_id=record_id, control_description=control_description, deployment=deployment)
+    """Legacy function interface - kept for backward compatibility."""
+    request = FiveWsMappingRequest(
+        record_id=record_id,
+        control_description=control_description,
+        deployment=deployment
+    )
+    use_case = ClassifyControlTo5Ws(repo=repo, llm=llm)
+    return use_case.execute(request)

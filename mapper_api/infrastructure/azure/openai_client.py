@@ -4,13 +4,13 @@ import time
 from typing import Mapping, Any, Optional
 from openai import AzureOpenAI
 from tenacity import retry, stop_after_attempt, wait_exponential
-from mapper_api.infrastructure.logging.logger import get_logger
+import logging
 
 
 class AzureOpenAILLMClient:
     def __init__(self, *, endpoint: str, api_key: str, api_version: str) -> None:
         self._client = AzureOpenAI(azure_endpoint=endpoint, api_key=api_key, api_version=api_version)
-        self._logger = get_logger("mapper.llm")
+        self._logger = logging.getLogger("mapper.llm")
 
     @retry(stop=stop_after_attempt(2), wait=wait_exponential(multiplier=0.3, min=0.3, max=2.0))
     def json_schema_chat(

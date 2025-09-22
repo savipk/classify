@@ -1,11 +1,22 @@
 """Domain errors and exceptions used across layers."""
-class DomainError(Exception):
-    """Base domain error."""
 
 
-class ValidationError(DomainError):
-    """Raised when domain invariants are violated."""
+class MapperDomainError(Exception):
+    """Base class for all domain-specific errors in the mapper application."""
 
 
-class DefinitionsNotLoadedError(DomainError):
-    """Raised when required definitions are not available."""
+class ControlValidationError(MapperDomainError):
+    """Raised when control description validation fails."""
+
+
+class DefinitionsUnavailableError(MapperDomainError):
+    """Raised when required definitions are not loaded or available."""
+
+
+class LLMProcessingError(MapperDomainError):
+    """Raised when LLM processing fails or returns invalid data."""
+
+
+# Keep original names for backward compatibility during transition
+ValidationError = ControlValidationError
+DefinitionsNotLoadedError = DefinitionsUnavailableError
