@@ -4,6 +4,7 @@ from fastapi import FastAPI
 from fastapi.exceptions import RequestValidationError
 from mapper_api.api.routers.taxonomy_mapper import router as taxonomy_router
 from mapper_api.api.routers.fivews_mapper import router as fivews_router
+from mapper_api.api.routers.evaluator import router as evaluator_router
 from mapper_api.api.routers.health import router as health_router
 from mapper_api.api.errors import (
     control_validation_exception_handler,
@@ -33,6 +34,7 @@ def create_app() -> FastAPI:
     # Include routers with version prefix
     app.include_router(taxonomy_router, prefix=f"/{settings.API_VERSION}")
     app.include_router(fivews_router, prefix=f"/{settings.API_VERSION}")
+    app.include_router(evaluator_router, prefix=f"/{settings.API_VERSION}")
     app.include_router(health_router, prefix=f"/{settings.API_VERSION}")
 
     # Exception handlers
