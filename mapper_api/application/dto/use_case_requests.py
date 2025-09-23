@@ -8,7 +8,6 @@ class TaxonomyMappingRequest:
     """Request object for taxonomy mapping use case."""
     record_id: str
     control_description: str
-    deployment: str
 
 
 @dataclass(frozen=True)
@@ -16,4 +15,3 @@ class FiveWsMappingRequest:
     """Request object for 5Ws mapping use case."""
     record_id: str
     control_description: str
-    deployment: str

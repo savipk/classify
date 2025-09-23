@@ -3,8 +3,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Dict, Any
 
-from mapper_api.application.dto.requests import CommonRequest
-from mapper_api.application.dto.responses import TaxonomyResponse, ResponseHeader, TaxonomyData
+from mapper_api.application.dto.http_requests import CommonRequest
+from mapper_api.application.dto.http_responses import TaxonomyResponse, ResponseHeader, TaxonomyData
 from mapper_api.application.dto.use_case_requests import TaxonomyMappingRequest
 from mapper_api.application.use_cases.map_control_to_themes import ClassifyControlToThemes
 from mapper_api.domain.errors import ControlValidationError
@@ -20,7 +20,6 @@ class TaxonomyController:
     request/response transformation.
     """
     classify_use_case: ClassifyControlToThemes
-    deployment: str
 
     def handle_taxonomy_mapping(self, request: CommonRequest) -> TaxonomyResponse:
         """
@@ -38,8 +37,7 @@ class TaxonomyController:
         # Transform web request to use case request
         use_case_request = TaxonomyMappingRequest(
             record_id=request.header.recordId,
-            control_description=request.data.controlDescription,
-            deployment=self.deployment
+            control_description=request.data.controlDescription
         )
         
         # Execute use case (already configured with dependencies)

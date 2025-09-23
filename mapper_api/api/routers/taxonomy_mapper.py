@@ -1,8 +1,8 @@
 """HTTP router for POST /taxonomy_mapper."""
 from __future__ import annotations
 from fastapi import APIRouter
-from mapper_api.application.dto.requests import CommonRequest
-from mapper_api.application.dto.responses import TaxonomyResponse
+from mapper_api.application.dto.http_requests import CommonRequest
+from mapper_api.application.dto.http_responses import TaxonomyResponse
 from mapper_api.config.settings import Settings
 from mapper_api.infrastructure.azure.blob_definitions_repo import BlobDefinitionsRepository
 from mapper_api.infrastructure.azure.openai_client import AzureOpenAILLMClient
@@ -43,8 +43,7 @@ def get_taxonomy_controller() -> TaxonomyController:
     
     # Create and return controller
     return TaxonomyController(
-        classify_use_case=classify_use_case,
-        deployment=settings.AZURE_OPENAI_DEPLOYMENT
+        classify_use_case=classify_use_case
     )
 
 

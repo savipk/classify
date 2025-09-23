@@ -5,12 +5,13 @@ from mapper_api.domain.entities.control import Control
 from mapper_api.domain.repositories.definitions import DefinitionsRepository
 from mapper_api.domain.services.taxonomy_service import TaxonomyService
 from mapper_api.domain.errors import ControlValidationError, DefinitionsUnavailableError
-from mapper_api.application.dto.output_schemas import build_taxonomy_models
+from mapper_api.application.dto.llm_schemas import build_taxonomy_models
 from mapper_api.application.prompts.taxonomy import TaxonomyPrompt
 from mapper_api.application.mappers.assemblers import assemble_taxonomy_items
 from mapper_api.domain.value_objects.score import ThemeClassification, Score
 from mapper_api.application.ports.llm import LLMClient
 from mapper_api.application.dto.use_case_requests import TaxonomyMappingRequest
+from mapper_api.config.settings import Settings
 
 
 @dataclass
@@ -67,6 +68,7 @@ class ClassifyControlToThemes:
         # Build and execute LLM call
         system, user = self.prompt.build(record_id=request.record_id, control_description=ctrl.text)
         schema = self.TaxonomyOut.model_json_schema()
+        settings = Settings()
         raw = self.llm.json_schema_chat(
             system=system,
             user=user,
@@ -75,7 +77,7 @@ class ClassifyControlToThemes:
             max_tokens=600,
             temperature=0.1,
             context={"trace_id": request.record_id},
-            deployment=request.deployment,
+            deployment=settings.AZURE_OPENAI_DEPLOYMENT,
         )
         
         try:

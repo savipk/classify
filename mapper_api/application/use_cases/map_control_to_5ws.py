@@ -1,13 +1,14 @@
 """Use case: extract 5Ws presence with reasoning using LLM with strict JSON."""
 from __future__ import annotations
 from dataclasses import dataclass
-from mapper_api.application.dto.output_schemas import FiveWOut
+from mapper_api.application.dto.llm_schemas import FiveWOut
 from mapper_api.application.ports.llm import LLMClient
 from mapper_api.application.prompts import fivews as fivews_prompts
 from mapper_api.domain.entities.control import Control
 from mapper_api.domain.repositories.definitions import DefinitionsRepository
 from mapper_api.domain.errors import ControlValidationError, DefinitionsUnavailableError
 from mapper_api.application.dto.use_case_requests import FiveWsMappingRequest
+from mapper_api.config.settings import Settings
 
 _ORDER = ["who", "what", "when", "where", "why"]
 
@@ -47,6 +48,7 @@ class ClassifyControlTo5Ws:
         schema = FiveWOut.model_json_schema()
         system_prompt = fivews_prompts.SYSTEM
         user_prompt = fivews_prompts.build_user_prompt(ctrl.text, defs)
+        settings = Settings()
 
         raw = self.llm.json_schema_chat(
             system=system_prompt,
@@ -56,7 +58,7 @@ class ClassifyControlTo5Ws:
             max_tokens=400,
             temperature=0.1,
             context={"trace_id": request.record_id},
-            deployment=request.deployment,
+            deployment=settings.AZURE_OPENAI_DEPLOYMENT,
         )
 
         try:

@@ -1,0 +1,113 @@
+[
+    {
+      "control_id": "CTRL-0000054735",
+      "control_description": "CRO UBS BB team from Brazil is responsible for reconciling the local control database with the global credit risk system IRIS. This is a monthly control to ensure consistency and accuracy.",
+      "gt_5ws": [
+        { "name": "who", "status": "present", "reasoning": "CRO UBS BB team from Brazil" },
+        { "name": "what", "status": "present", "reasoning": "Reconcile local control database with the global credit risk system IRIS" },
+        { "name": "when", "status": "present", "reasoning": "Performed monthly" },
+        { "name": "where", "status": "present", "reasoning": "Report Recon - Local vs Global comparing IRIS information with CDR" },
+        { "name": "why", "status": "missing", "reasoning": "" }
+      ]
+    },
+    {
+      "control_id": "CTRL-0000045234",
+      "control_description": "Reviewers ensure that the balance sheet substantiation is completed in line with ATIS (FAP, MAT, SAT). Breaks are identified, investigated, and resolved during the reconciliation process.",
+      "gt_5ws": [
+        { "name": "who", "status": "present", "reasoning": "Reviewers" },
+        { "name": "what", "status": "present", "reasoning": "Perform balance sheet substantiation and resolve breaks" },
+        { "name": "when", "status": "present", "reasoning": "Monthly" },
+        { "name": "where", "status": "missing", "reasoning": "" },
+        { "name": "why", "status": "missing", "reasoning": "" }
+      ]
+    },
+    {
+      "control_id": "CTRL-0000067890",
+      "control_description": "Operations team validates daily cash reconciliations across internal ledgers and external bank statements. Exceptions are logged and escalated if unresolved after 24 hours.",
+      "gt_5ws": [
+        { "name": "who", "status": "present", "reasoning": "Operations team" },
+        { "name": "what", "status": "present", "reasoning": "Validate cash reconciliations across ledgers and bank statements" },
+        { "name": "when", "status": "present", "reasoning": "Daily, with escalation after 24 hours" },
+        { "name": "where", "status": "missing", "reasoning": "" },
+        { "name": "why", "status": "present", "reasoning": "To ensure accurate liquidity management and timely exception handling" }
+      ]
+    },
+    {
+      "control_id": "CTRL-0000071234",
+      "control_description": "IT Security team monitors privileged user activity logs weekly and investigates unusual access patterns. Findings are reported to the Risk Committee.",
+      "gt_5ws": [
+        { "name": "who", "status": "present", "reasoning": "IT Security team" },
+        { "name": "what", "status": "present", "reasoning": "Monitor privileged user activity logs and investigate anomalies" },
+        { "name": "when", "status": "present", "reasoning": "Weekly" },
+        { "name": "where", "status": "present", "reasoning": "Access logs from internal monitoring systems" },
+        { "name": "why", "status": "present", "reasoning": "To prevent unauthorized access and strengthen IT security" }
+      ]
+    },
+    {
+      "control_id": "CTRL-0000082468",
+      "control_description": "Compliance team reviews quarterly KYC refreshes to ensure client data is up to date and aligned with regulatory requirements. Exceptions are tracked until closure.",
+      "gt_5ws": [
+        { "name": "who", "status": "present", "reasoning": "Compliance team" },
+        { "name": "what", "status": "present", "reasoning": "Review quarterly KYC refreshes and track exceptions" },
+        { "name": "when", "status": "present", "reasoning": "Quarterly" },
+        { "name": "where", "status": "missing", "reasoning": "" },
+        { "name": "why", "status": "missing", "reasoning": "" }
+      ]
+    },
+    {
+      "control_id": "CTRL-0000093571",
+      "control_description": "Risk Management team conducts scenario testing of market exposures to identify potential breaches against risk appetite. Results are reported to senior management.",
+      "gt_5ws": [
+        { "name": "who", "status": "present", "reasoning": "Risk Management team" },
+        { "name": "what", "status": "present", "reasoning": "Conduct scenario testing of market exposures" },
+        { "name": "when", "status": "missing", "reasoning": "" },
+        { "name": "where", "status": "present", "reasoning": "Market risk models and internal risk systems" },
+        { "name": "why", "status": "present", "reasoning": "To ensure risk exposures remain within approved appetite" }
+      ]
+    },
+    {
+      "control_id": "CTRL-0000109842",
+      "control_description": "HR performs semi-annual access reviews to ensure that only authorized employees retain system access.",
+      "gt_5ws": [
+        { "name": "who", "status": "present", "reasoning": "HR department" },
+        { "name": "what", "status": "present", "reasoning": "Perform semi-annual system access reviews" },
+        { "name": "when", "status": "present", "reasoning": "Semi-annual" },
+        { "name": "where", "status": "missing", "reasoning": "" },
+        { "name": "why", "status": "present", "reasoning": "To ensure system access is limited to authorized users only" }
+      ]
+    },
+    {
+      "control_id": "CTRL-0000114739",
+      "control_description": "Finance validates revenue recognition entries against IFRS 15 standards on a quarterly basis.",
+      "gt_5ws": [
+        { "name": "who", "status": "present", "reasoning": "Finance team" },
+        { "name": "what", "status": "present", "reasoning": "Validate revenue recognition entries" },
+        { "name": "when", "status": "present", "reasoning": "Quarterly" },
+        { "name": "where", "status": "present", "reasoning": "Financial reporting systems" },
+        { "name": "why", "status": "missing", "reasoning": "" }
+      ]
+    },
+    {
+      "control_id": "CTRL-0000126583",
+      "control_description": "Internal Audit performs annual reviews of procurement processes to ensure compliance with vendor management policies.",
+      "gt_5ws": [
+        { "name": "who", "status": "present", "reasoning": "Internal Audit" },
+        { "name": "what", "status": "present", "reasoning": "Review procurement processes" },
+        { "name": "when", "status": "present", "reasoning": "Annually" },
+        { "name": "where", "status": "missing", "reasoning": "" },
+        { "name": "why", "status": "present", "reasoning": "To ensure compliance with vendor management policies" }
+      ]
+    },
+    {
+      "control_id": "CTRL-0000134720",
+      "control_description": "Treasury monitors daily FX positions to ensure compliance with regulatory limits and internal policies.",
+      "gt_5ws": [
+        { "name": "who", "status": "present", "reasoning": "Treasury team" },
+        { "name": "what", "status": "present", "reasoning": "Monitor daily FX positions" },
+        { "name": "when", "status": "present", "reasoning": "Daily" },
+        { "name": "where", "status": "present", "reasoning": "FX trading systems and reports" },
+        { "name": "why", "status": "present", "reasoning": "To ensure compliance with regulatory limits and internal policies" }
+      ]
+    }
+  ]
+  

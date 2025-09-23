@@ -2,7 +2,7 @@
 import pytest
 import json
 from pydantic import ValidationError
-from mapper_api.application.dto.output_schemas import build_taxonomy_models, FiveWItem, FiveWOut
+from mapper_api.application.dto.llm_schemas import build_taxonomy_models, FiveWItem, FiveWOut
 
 
 class TestBuildTaxonomyModels:

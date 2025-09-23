@@ -1,0 +1,163 @@
+[
+    {
+      "control_id": "CTRL-00003001",
+      "control_description": "Trading desk monitors staff communications and trade orders to detect misuse of market-sensitive information and patterns of unfair client treatment.",
+      "risk_theme": [
+        {
+          "name": "Insider dealing and misuse of market sensitive information",
+          "id": 1,
+          "reasoning": "The control addresses monitoring for potential misuse of market-sensitive information."
+        },
+        {
+          "name": "Fair and appropriate client pricing",
+          "id": 2,
+          "reasoning": "The control ensures clients are not treated unfairly in pricing or execution."
+        }
+      ]
+    },
+    {
+      "control_id": "CTRL-00003002",
+      "control_description": "Compliance performs monthly reviews of trading activity to ensure no manipulation of markets and adherence to cross-border restrictions.",
+      "risk_theme": [
+        {
+          "name": "Standards for fair and orderly markets",
+          "id": 3,
+          "reasoning": "The control is focused on preventing manipulative activities that would disrupt fair market standards."
+        },
+        {
+          "name": "Cross-border Business Conduct",
+          "id": 4,
+          "reasoning": "The review includes adherence to restrictions related to trading across different jurisdictions."
+        }
+      ]
+    },
+    {
+      "control_id": "CTRL-00003003",
+      "control_description": "Advisory team validates client investment profiles and suitability assessments, ensuring investment objectives are aligned with recorded information.",
+      "risk_theme": [
+        {
+          "name": "Investment Suitability",
+          "id": 5,
+          "reasoning": "The control directly relates to assessing client suitability and recording objectives."
+        },
+        {
+          "name": "Records Management",
+          "id": 6,
+          "reasoning": "Accurate recording of investment profiles requires robust records management processes."
+        }
+      ]
+    },
+    {
+      "control_id": "CTRL-00003004",
+      "control_description": "Finance department substantiates balance sheet accounts quarterly and ensures compliance with financial reporting standards.",
+      "risk_theme": [
+        {
+          "name": "Financial Reporting",
+          "id": 7,
+          "reasoning": "The control directly supports reliable and accurate financial reporting."
+        },
+        {
+          "name": "Corporate Governance and Frameworks",
+          "id": 8,
+          "reasoning": "Proper governance frameworks ensure accountability for balance sheet substantiation."
+        }
+      ]
+    },
+    {
+      "control_id": "CTRL-00003005",
+      "control_description": "IT security monitors privileged access logs weekly, while technology operations ensure production stability of trading systems.",
+      "risk_theme": [
+        {
+          "name": "Cyber and Information Security",
+          "id": 9,
+          "reasoning": "The monitoring of privileged access is an information security measure."
+        },
+        {
+          "name": "Technology Production Stability",
+          "id": 10,
+          "reasoning": "Ensuring trading system availability aligns with production stability requirements."
+        }
+      ]
+    },
+    {
+      "control_id": "CTRL-00003006",
+      "control_description": "Human Resources verifies front-office licenses, while compliance ensures adherence to sanctions and embargo restrictions.",
+      "risk_theme": [
+        {
+          "name": "Employment or Licensing Practices",
+          "id": 11,
+          "reasoning": "The control ensures staff maintain required professional licenses."
+        },
+        {
+          "name": "Sanctions or Embargo Violations",
+          "id": 12,
+          "reasoning": "Monitoring for adherence to sanction rules aligns with embargo violation risk management."
+        }
+      ]
+    },
+    {
+      "control_id": "CTRL-00003007",
+      "control_description": "AML team reviews client transactions for suspicious activity while data ethics reviews ensure personal data is handled appropriately.",
+      "risk_theme": [
+        {
+          "name": "AML and KYC",
+          "id": 13,
+          "reasoning": "Transaction monitoring is a core AML and KYC process."
+        },
+        {
+          "name": "Privacy and Data Ethics",
+          "id": 14,
+          "reasoning": "Ensuring client data is handled responsibly ties directly to data ethics."
+        }
+      ]
+    },
+    {
+      "control_id": "CTRL-00003008",
+      "control_description": "Risk management validates internal models for valuation and pricing while audit checks for internal fraud indicators.",
+      "risk_theme": [
+        {
+          "name": "Model Risk",
+          "id": 15,
+          "reasoning": "Validation of pricing and valuation models is a key model risk control."
+        },
+        {
+          "name": "Internal Fraud",
+          "id": 16,
+          "reasoning": "Audit review for fraud indicators maps to internal fraud risk."
+        }
+      ]
+    },
+    {
+      "control_id": "CTRL-00003009",
+      "control_description": "Third party vendor risk assessments are conducted annually, while transaction monitoring ensures correct and timely execution of payments.",
+      "risk_theme": [
+        {
+          "name": "Third Party Management and Inter-entity Outsourcing",
+          "id": 17,
+          "reasoning": "Annual vendor risk assessments align with third-party management obligations."
+        },
+        {
+          "name": "Transaction Processing and Execution",
+          "id": 18,
+          "reasoning": "Monitoring of payment execution relates directly to transaction execution risk."
+        }
+      ]
+    },
+    {
+      "control_id": "CTRL-00003010",
+      "control_description": "Crisis management teams run annual disaster recovery tests while compliance monitors bribery and corruption risks in procurement.",
+      "risk_theme": [
+        {
+          "name": "Business Continuity, Resilience and Crisis Management",
+          "id": 19,
+          "reasoning": "Disaster recovery testing is a direct resilience and continuity measure."
+        },
+        {
+          "name": "Bribery and Corruption",
+          "id": 20,
+          "reasoning": "Monitoring for bribery in procurement maps to bribery and corruption risk."
+        }
+      ]
+    }
+  ]
+  

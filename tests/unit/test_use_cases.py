@@ -70,8 +70,7 @@ class FakeLLM:
 def test_map_control_to_5ws():
     request = FiveWsMappingRequest(
         record_id='r2', 
-        control_description='text', 
-        deployment='d'
+        control_description='text'
     )
     use_case = ClassifyControlTo5Ws(repo=FakeRepo(), llm=FakeLLM())
     out = use_case.execute(request)
@@ -94,7 +93,6 @@ class TestMapControlToThemesEdgeCases:
             request = TaxonomyMappingRequest(
                 record_id='r1', 
                 control_description='', 
-                deployment='d'
             )
             use_case = ClassifyControlToThemes.from_defs(FakeRepo(), FakeLLM())
             use_case.execute(request)
@@ -104,7 +102,6 @@ class TestMapControlToThemesEdgeCases:
             request = TaxonomyMappingRequest(
                 record_id='r1', 
                 control_description='   \t\n  ', 
-                deployment='d'
             )
             use_case = ClassifyControlToThemes.from_defs(FakeRepo(), FakeLLM())
             use_case.execute(request)
@@ -120,7 +117,6 @@ class TestMapControlToThemesEdgeCases:
             request = TaxonomyMappingRequest(
                 record_id='r1',
                 control_description='valid text',
-                deployment='d'
             )
             use_case = ClassifyControlToThemes.from_defs(EmptyRepo(), FakeLLM())
             use_case.execute(request)
@@ -134,7 +130,6 @@ class TestMapControlToThemesEdgeCases:
             request = TaxonomyMappingRequest(
                 record_id='r1',
                 control_description='valid text',
-                deployment='d'
             )
             use_case = ClassifyControlToThemes.from_defs(FakeRepo(), BadLLM())
             use_case.execute(request)
@@ -144,7 +139,6 @@ class TestMapControlToThemesEdgeCases:
         request = TaxonomyMappingRequest(
             record_id='r1',
             control_description=long_text,
-            deployment='d'
         )
         use_case = ClassifyControlToThemes.from_defs(FakeRepo(), FakeLLM())
         result = use_case.execute(request)
@@ -161,7 +155,6 @@ class TestMapControlToFiveWsEdgeCases:
             request = FiveWsMappingRequest(
                 record_id='r1', 
                 control_description='', 
-                deployment='d'
             )
             use_case = ClassifyControlTo5Ws(repo=FakeRepo(), llm=FakeLLM())
             use_case.execute(request)
@@ -171,7 +164,6 @@ class TestMapControlToFiveWsEdgeCases:
             request = FiveWsMappingRequest(
                 record_id='r1', 
                 control_description='   \t\n  ', 
-                deployment='d'
             )
             use_case = ClassifyControlTo5Ws(repo=FakeRepo(), llm=FakeLLM())
             use_case.execute(request)
@@ -187,7 +179,6 @@ class TestMapControlToFiveWsEdgeCases:
             request = FiveWsMappingRequest(
                 record_id='r1',
                 control_description='valid text',
-                deployment='d'
             )
             use_case = ClassifyControlTo5Ws(repo=EmptyRepo(), llm=FakeLLM())
             use_case.execute(request)
@@ -201,7 +192,6 @@ class TestMapControlToFiveWsEdgeCases:
             request = FiveWsMappingRequest(
                 record_id='r1',
                 control_description='valid text',
-                deployment='d'
             )
             use_case = ClassifyControlTo5Ws(repo=FakeRepo(), llm=BadLLM())
             use_case.execute(request)
@@ -215,7 +205,6 @@ class TestMapControlToFiveWsEdgeCases:
             request = FiveWsMappingRequest(
                 record_id='r1',
                 control_description='valid text',
-                deployment='d'
             )
             use_case = ClassifyControlTo5Ws(repo=FakeRepo(), llm=BadLLM())
             use_case.execute(request)
@@ -237,7 +226,6 @@ class TestMapControlToFiveWsEdgeCases:
         request = FiveWsMappingRequest(
             record_id='r1',
             control_description='valid text',
-            deployment='d'
         )
         use_case = ClassifyControlTo5Ws(repo=FakeRepo(), llm=DisorderedLLM())
         result = use_case.execute(request)
@@ -267,7 +255,6 @@ class TestMapControlToFiveWsEdgeCases:
         request = FiveWsMappingRequest(
             record_id='test-trace-123',
             control_description='valid text',
-            deployment='d'
         )
         use_case = ClassifyControlTo5Ws(repo=FakeRepo(), llm=trace_llm)
         use_case.execute(request)
@@ -305,7 +292,6 @@ class TestClassifyControlToFiveWsClass:
         request = FiveWsMappingRequest(
             record_id='direct-test',
             control_description='test control',
-            deployment='test-deployment'
         )
         result = use_case.execute(request)
         assert isinstance(result, list)

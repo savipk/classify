@@ -2,8 +2,8 @@
 from __future__ import annotations
 from dataclasses import dataclass
 
-from mapper_api.application.dto.requests import CommonRequest
-from mapper_api.application.dto.responses import FiveWResponse, ResponseHeader, FiveWData
+from mapper_api.application.dto.http_requests import CommonRequest
+from mapper_api.application.dto.http_responses import FiveWResponse, ResponseHeader, FiveWData
 from mapper_api.application.dto.use_case_requests import FiveWsMappingRequest
 from mapper_api.application.use_cases.map_control_to_5ws import ClassifyControlTo5Ws
 from mapper_api.domain.errors import ControlValidationError
@@ -19,7 +19,6 @@ class FiveWsController:
     request/response transformation.
     """
     classify_use_case: ClassifyControlTo5Ws
-    deployment: str
 
     def handle_fivews_mapping(self, request: CommonRequest) -> FiveWResponse:
         """
@@ -37,8 +36,7 @@ class FiveWsController:
         # Transform web request to use case request
         use_case_request = FiveWsMappingRequest(
             record_id=request.header.recordId,
-            control_description=request.data.controlDescription,
-            deployment=self.deployment
+            control_description=request.data.controlDescription
         )
         
         # Execute use case (already configured with dependencies)

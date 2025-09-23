@@ -8,7 +8,7 @@ from mapper_api.application.use_cases.map_control_to_themes import ClassifyContr
 from mapper_api.application.use_cases.map_control_to_5ws import ClassifyControlTo5Ws
 from mapper_api.interface.controllers.taxonomy_controller import TaxonomyController
 from mapper_api.interface.controllers.fivews_controller import FiveWsController
-from mapper_api.application.dto.requests import CommonRequest, CommonHeader, CommonData
+from mapper_api.application.dto.http_requests import CommonRequest, CommonHeader, CommonData
 
 
 def test_complete_taxonomy_flow():
@@ -23,7 +23,6 @@ def test_complete_taxonomy_flow():
     # Create controller
     controller = TaxonomyController(
         classify_use_case=use_case,
-        deployment='test'
     )
     
     # Create request
@@ -61,7 +60,6 @@ def test_complete_fivews_flow():
     # Create controller
     controller = FiveWsController(
         classify_use_case=use_case,
-        deployment='test'
     )
     
     # Create request
@@ -99,7 +97,7 @@ def test_domain_validation_errors():
     repo = LocalFileDefinitionsRepository()
     llm = StaticLLMClient()
     use_case = ClassifyControlToThemes.from_defs(repo, llm)
-    controller = TaxonomyController(classify_use_case=use_case, deployment='test')
+    controller = TaxonomyController(classify_use_case=use_case)
     
     # Test empty control description
     request = CommonRequest(
