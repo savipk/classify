@@ -1,23 +1,23 @@
 """Response DTOs for evaluation operations."""
 from __future__ import annotations
-from typing import List, Dict, Any
-from pydantic import BaseModel, Field, confloat
+from typing import List, Dict, Any, Annotated
+from pydantic import BaseModel, Field
 from mapper_api.application.dto.http_responses import ResponseHeader
 
 
 class IndividualRecallData(BaseModel):
     """Individual recall result for a single control."""
     controlId: str = Field(..., description="Control ID")
-    recall: confloat(ge=0.0, le=1.0) = Field(..., description="Recall score")  # type: ignore[valid-type]
+    recall: Annotated[float, Field(ge=0.0, le=1.0, description="Recall score")]
     details: Dict[str, Any] = Field(..., description="Additional details")
 
 
 class SummaryRecallData(BaseModel):
     """Summary recall statistics."""
     totalRecords: int = Field(..., description="Total number of records evaluated")
-    averageRecall: confloat(ge=0.0, le=1.0) = Field(..., description="Average recall score")  # type: ignore[valid-type]
-    minRecall: confloat(ge=0.0, le=1.0) = Field(..., description="Minimum recall score")  # type: ignore[valid-type]
-    maxRecall: confloat(ge=0.0, le=1.0) = Field(..., description="Maximum recall score")  # type: ignore[valid-type]
+    averageRecall: Annotated[float, Field(ge=0.0, le=1.0, description="Average recall score")]
+    minRecall: Annotated[float, Field(ge=0.0, le=1.0, description="Minimum recall score")]
+    maxRecall: Annotated[float, Field(ge=0.0, le=1.0, description="Maximum recall score")]
 
 
 class EvaluationData(BaseModel):

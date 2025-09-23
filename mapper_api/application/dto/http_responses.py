@@ -1,7 +1,7 @@
 """Pydantic response DTOs matching API contracts."""
 from __future__ import annotations
-from typing import Literal
-from pydantic import BaseModel, Field, conlist, confloat
+from typing import Literal, Annotated, List
+from pydantic import BaseModel, Field
 from pydantic import ConfigDict
 
 
@@ -12,12 +12,12 @@ class ResponseHeader(BaseModel):
 class TaxonomyItem(BaseModel):
     name: str
     id: int
-    score: confloat(ge=0.0, le=1.0)  # type: ignore[valid-type]
+    score: Annotated[float, Field(ge=0.0, le=1.0)]
     reasoning: str
 
 
 class TaxonomyData(BaseModel):
-    taxonomy: conlist(TaxonomyItem, min_length=3, max_length=3)  # type: ignore[valid-type]
+    taxonomy: Annotated[List[TaxonomyItem], Field(min_length=3, max_length=3)]
 
 
 class TaxonomyResponse(BaseModel):
@@ -38,7 +38,7 @@ class FiveWItem(BaseModel):
 class FiveWData(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
     _order = ["who", "what", "when", "where", "why"]
-    fivews: conlist(FiveWItem, min_length=5, max_length=5) = Field(  # type: ignore[valid-type]
+    fivews: Annotated[List[FiveWItem], Field(min_length=5, max_length=5)] = Field(
         serialization_alias="5ws",
         validation_alias="5ws",
     )
