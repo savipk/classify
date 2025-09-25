@@ -37,7 +37,7 @@ class ClassifyControlTo5Ws:
         """
         # Validate control using domain entity
         ctrl = Control(text=request.control_description)
-        ctrl.ensure_not_empty()
+        ctrl.validate_all()
 
         # Get 5Ws definitions
         defs = self.repo.get_fivews_rows()

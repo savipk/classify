@@ -60,7 +60,7 @@ class ClassifyControlToThemes:
         """
         # Validate control using domain entity
         ctrl = Control(text=request.control_description)
-        ctrl.ensure_not_empty()
+        ctrl.validate_all()
         
         # Get domain entities for potential business logic use
         risk_themes = self.repo.get_risk_themes()

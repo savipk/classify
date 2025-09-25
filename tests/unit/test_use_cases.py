@@ -70,7 +70,7 @@ class FakeLLM:
 def test_map_control_to_5ws():
     request = FiveWsMappingRequest(
         record_id='r2', 
-        control_description='text'
+        control_description='This is a comprehensive English control description that meets all validation requirements including minimum length of fifty characters.'
     )
     use_case = ClassifyControlTo5Ws(repo=FakeRepo(), llm=FakeLLM())
     out = use_case.execute(request)
@@ -116,7 +116,7 @@ class TestMapControlToThemesEdgeCases:
         with pytest.raises(DefinitionsUnavailableError, match="taxonomy definitions not loaded"):
             request = TaxonomyMappingRequest(
                 record_id='r1',
-                control_description='valid text',
+                control_description='This is a valid English control description that meets all requirements including minimum length of fifty characters.',
             )
             use_case = ClassifyControlToThemes.from_defs(EmptyRepo(), FakeLLM())
             use_case.execute(request)
@@ -129,13 +129,13 @@ class TestMapControlToThemesEdgeCases:
         with pytest.raises(ControlValidationError, match="LLM output validation failed"):
             request = TaxonomyMappingRequest(
                 record_id='r1',
-                control_description='valid text',
+                control_description='This is a valid English control description that meets all requirements including minimum length of fifty characters.',
             )
             use_case = ClassifyControlToThemes.from_defs(FakeRepo(), BadLLM())
             use_case.execute(request)
     
     def test_long_control_description_handled(self):
-        long_text = "A" * 5000  # Very long control description
+        long_text = "This is a very comprehensive English control description that describes detailed control procedures and mechanisms in place to ensure compliance with organizational policies and regulatory requirements. " * 50  # Very long but valid English text
         request = TaxonomyMappingRequest(
             record_id='r1',
             control_description=long_text,
@@ -178,7 +178,7 @@ class TestMapControlToFiveWsEdgeCases:
         with pytest.raises(DefinitionsUnavailableError, match="5Ws definitions not loaded"):
             request = FiveWsMappingRequest(
                 record_id='r1',
-                control_description='valid text',
+                control_description='This is a valid English control description that meets all requirements including minimum length of fifty characters.',
             )
             use_case = ClassifyControlTo5Ws(repo=EmptyRepo(), llm=FakeLLM())
             use_case.execute(request)
@@ -191,7 +191,7 @@ class TestMapControlToFiveWsEdgeCases:
         with pytest.raises(ControlValidationError, match="LLM output validation failed"):
             request = FiveWsMappingRequest(
                 record_id='r1',
-                control_description='valid text',
+                control_description='This is a valid English control description that meets all requirements including minimum length of fifty characters.',
             )
             use_case = ClassifyControlTo5Ws(repo=FakeRepo(), llm=BadLLM())
             use_case.execute(request)
@@ -204,7 +204,7 @@ class TestMapControlToFiveWsEdgeCases:
         with pytest.raises(ControlValidationError, match="LLM output validation failed"):
             request = FiveWsMappingRequest(
                 record_id='r1',
-                control_description='valid text',
+                control_description='This is a valid English control description that meets all requirements including minimum length of fifty characters.',
             )
             use_case = ClassifyControlTo5Ws(repo=FakeRepo(), llm=BadLLM())
             use_case.execute(request)
@@ -225,7 +225,7 @@ class TestMapControlToFiveWsEdgeCases:
         
         request = FiveWsMappingRequest(
             record_id='r1',
-            control_description='valid text',
+            control_description='This is a valid English control description that meets all requirements including minimum length of fifty characters.',
         )
         use_case = ClassifyControlTo5Ws(repo=FakeRepo(), llm=DisorderedLLM())
         result = use_case.execute(request)
@@ -254,7 +254,7 @@ class TestMapControlToFiveWsEdgeCases:
         trace_llm = TraceLLM()
         request = FiveWsMappingRequest(
             record_id='test-trace-123',
-            control_description='valid text',
+            control_description='This is a valid English control description that meets all requirements including minimum length of fifty characters.',
         )
         use_case = ClassifyControlTo5Ws(repo=FakeRepo(), llm=trace_llm)
         use_case.execute(request)
@@ -291,7 +291,7 @@ class TestClassifyControlToFiveWsClass:
         from mapper_api.application.dto.use_case_requests import FiveWsMappingRequest
         request = FiveWsMappingRequest(
             record_id='direct-test',
-            control_description='test control',
+            control_description='This is a test control description that meets all validation requirements including proper length.',
         )
         result = use_case.execute(request)
         assert isinstance(result, list)

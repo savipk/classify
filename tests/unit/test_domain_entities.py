@@ -152,3 +152,75 @@ class TestRiskTheme:
         # Verify the relationship fields are accessible
         assert risk_theme.taxonomy_id == 101
         assert risk_theme.cluster_id == 10
+
+    def test_ensure_minimum_length_valid_exactly_50(self):
+        """Test minimum length validation with exactly 50 characters."""
+        control = Control(text="A" * 50)  # Exactly 50 chars
+        control.ensure_minimum_length()  # Should not raise
+    
+    def test_ensure_minimum_length_valid_over_50(self):
+        """Test minimum length validation with more than 50 characters."""
+        control = Control(text="This is a control description that is definitely longer than fifty characters and should pass validation.")
+        control.ensure_minimum_length()  # Should not raise
+    
+    def test_ensure_minimum_length_fails_short(self):
+        """Test minimum length validation fails for short text."""
+        control = Control(text="Short control description")  # Only 25 chars
+        with pytest.raises(ValueError, match="must be at least 50 characters long, got 25"):
+            control.ensure_minimum_length()
+    
+    def test_ensure_minimum_length_with_whitespace(self):
+        """Test minimum length validation handles whitespace correctly."""
+        control = Control(text="   Short   ")  # Only 5 chars after strip
+        with pytest.raises(ValueError, match="must be at least 50 characters long, got 5"):
+            control.ensure_minimum_length()
+    
+    def test_ensure_is_english_valid(self):
+        """Test English language validation with valid English text."""
+        control = Control(text="This is a valid English control description with proper length and grammar.")
+        control.ensure_is_english()  # Should not raise
+    
+    def test_ensure_is_english_fails_spanish(self):
+        """Test English language validation fails for Spanish text."""
+        control = Control(text="Esta es una descripción de control en español que es suficientemente larga para cumplir con los requisitos.")
+        with pytest.raises(ValueError, match="must be in English, detected language: es"):
+            control.ensure_is_english()
+    
+    def test_ensure_is_english_fails_french(self):
+        """Test English language validation fails for French text."""
+        control = Control(text="Ceci est une description de contrôle en français qui est suffisamment longue pour répondre aux exigences.")
+        with pytest.raises(ValueError, match="must be in English, detected language: fr"):
+            control.ensure_is_english()
+    
+    def test_ensure_is_english_handles_mixed_content(self):
+        """Test English validation with mostly English text containing few foreign words."""
+        # This should pass as it's predominantly English
+        control = Control(text="This is an English control description with occasional foreign terms like 'résumé' but is primarily English.")
+        control.ensure_is_english()  # Should not raise
+    
+    def test_validate_all_success(self):
+        """Test that validate_all passes for valid control description."""
+        control = Control(text="This is a comprehensive English control description that meets all validation requirements including proper length and language.")
+        control.validate_all()  # Should not raise
+    
+    def test_validate_all_fails_empty(self):
+        """Test that validate_all fails for empty control description."""
+        control = Control(text="")
+        with pytest.raises(ValueError, match="control description must not be empty"):
+            control.validate_all()
+    
+    def test_validate_all_fails_short(self):
+        """Test that validate_all fails for short control description."""
+        control = Control(text="Too short")
+        with pytest.raises(ValueError, match="must be at least 50 characters long"):
+            control.validate_all()
+    
+    def test_validate_all_fails_non_english(self):
+        """Test that validate_all fails for non-English control description."""
+        control = Control(text="Esta es una descripción de control muy completa en español que tiene la longitud suficiente.")
+        with pytest.raises(ValueError, match="must be in English"):
+            control.validate_all()
+    
+    def test_min_length_constant(self):
+        """Test that MIN_LENGTH constant is properly set."""
+        assert Control.MIN_LENGTH == 50
