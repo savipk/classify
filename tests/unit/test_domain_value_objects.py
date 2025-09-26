@@ -1,7 +1,8 @@
 """Tests for domain value objects."""
 import pytest
 from mapper_api.domain.value_objects.fivew import FiveWName, FiveWStatus, FiveWFinding, FiveWsSet
-from mapper_api.domain.value_objects.score import Score, ThemeClassification
+from mapper_api.domain.value_objects.score import Score
+from mapper_api.domain.value_objects.classification import ThemeClassification
 
 
 class TestFiveWFinding:

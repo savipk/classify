@@ -13,12 +13,3 @@ class Score:
 
     # def __float__(self) -> float:  # convenience
     #     return float(self.value)
-
-
-@dataclass(frozen=True, slots=True)
-class ThemeClassification:
-    """Value object holding classification metadata for a RiskTheme."""
-    name: str
-    id: int
-    score: Score
-    reasoning: str

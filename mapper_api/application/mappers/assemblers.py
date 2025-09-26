@@ -1,7 +1,7 @@
 """Assemblers to convert domain outputs to response DTO dicts."""
 from __future__ import annotations
 from typing import Iterable, List, Dict
-from mapper_api.domain.value_objects.score import ThemeClassification
+from mapper_api.domain.value_objects.classification import ThemeClassification
 
 
 def assemble_taxonomy_items(classifications: Iterable[ThemeClassification]) -> List[Dict]:

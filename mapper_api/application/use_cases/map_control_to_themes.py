@@ -8,7 +8,8 @@ from mapper_api.domain.errors import ControlValidationError, DefinitionsUnavaila
 from mapper_api.application.dto.llm_schemas import build_taxonomy_models
 from mapper_api.application.prompts.taxonomy import TaxonomyPrompt
 from mapper_api.application.mappers.assemblers import assemble_taxonomy_items
-from mapper_api.domain.value_objects.score import ThemeClassification, Score
+from mapper_api.domain.value_objects.score import Score
+from mapper_api.domain.value_objects.classification import ThemeClassification
 from mapper_api.application.ports.llm import LLMClient
 from mapper_api.application.dto.use_case_requests import TaxonomyMappingRequest
 from mapper_api.config.settings import Settings

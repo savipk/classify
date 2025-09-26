@@ -1,7 +1,8 @@
 """Tests for application assemblers."""
 import pytest
 from mapper_api.application.mappers.assemblers import assemble_taxonomy_items
-from mapper_api.domain.value_objects.score import ThemeClassification, Score
+from mapper_api.domain.value_objects.score import Score
+from mapper_api.domain.value_objects.classification import ThemeClassification
 
 
 class TestAssembleTaxonomyItems:
