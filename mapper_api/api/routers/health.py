@@ -47,10 +47,10 @@ async def azure_health_check():
             client_secret=settings.AZURE_CLIENT_SECRET,
         )
         
-        themes = repo.get_theme_rows()
+        risk_themes = repo.get_risk_themes()
         fivews = repo.get_fivews_rows()
         
-        services_status.append(f"blob_storage: ok - Connected - {len(themes)} themes, {len(fivews)} 5Ws definitions loaded")
+        services_status.append(f"blob_storage: ok - Connected - {len(risk_themes)} themes, {len(fivews)} 5Ws definitions loaded")
     except Exception as e:
         services_status.append(f"blob_storage: error - Connection failed: {type(e).__name__}: {str(e)}")
         overall_status = "unhealthy"

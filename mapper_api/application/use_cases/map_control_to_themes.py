@@ -39,9 +39,8 @@ class ClassifyControlToThemes:
         allowed_names = [theme.name for theme in risk_themes]
         _, TaxonomyOut = build_taxonomy_models(allowed_names)
         
-        # Build prompt using raw rows (prompt template expects flat data structure)
-        rows = repo.get_theme_rows()
-        prompt = TaxonomyPrompt(rows)
+        # Build prompt using domain entities (consistent with domain-driven design)
+        prompt = TaxonomyPrompt(risk_themes)
         
         taxonomy_service = TaxonomyService()
         return cls(
@@ -86,8 +85,10 @@ class ClassifyControlToThemes:
         except Exception as e:
             raise ControlValidationError(f"LLM output validation failed: {e}")
         
-        # Process results using domain logic
-        items = sorted(data.taxonomy, key=lambda x: x.score, reverse=True)[:3]
+        # Process results using domain logic with score thresholding
+        SCORE_THRESHOLD = 0.2
+        all_items = sorted(data.taxonomy, key=lambda x: x.score, reverse=True)
+        items = [item for item in all_items if item.score >= SCORE_THRESHOLD][:3]
         classifications = [
             ThemeClassification(name=i.name, id=i.id, score=Score(i.score), reasoning=i.reasoning)
             for i in items

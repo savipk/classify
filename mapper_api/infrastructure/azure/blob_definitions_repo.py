@@ -4,7 +4,7 @@ import json
 from typing import Sequence, Dict, Any, Optional, List
 from azure.identity import ClientSecretCredential
 from azure.storage.blob import BlobServiceClient
-from mapper_api.domain.repositories.definitions import DefinitionsRepository, ThemeRow
+from mapper_api.domain.repositories.definitions import DefinitionsRepository
 from mapper_api.domain.entities.cluster import Cluster
 from mapper_api.domain.entities.taxonomy import Taxonomy
 from mapper_api.domain.entities.risk_theme import RiskTheme
@@ -27,20 +27,22 @@ class BlobDefinitionsRepository(DefinitionsRepository):
             credential=self._credential,
         )
         self._container = self._service.get_container_client(container_name)
-        self._themes: Optional[Sequence[ThemeRow]] = None
         self._fivews: Optional[Sequence[Dict[str, Any]]] = None
         self._taxonomy_service = TaxonomyService()
         self._domain_hierarchy: Optional[Dict[str, List]] = None
         self._load()
 
     def _load(self) -> None:
-        self._themes = self._load_themes()
         self._fivews = self._load_fivews()
-        # Build domain hierarchy after loading raw data
-        if self._themes:
-            self._domain_hierarchy = self._taxonomy_service.build_domain_hierarchy(self._themes)
+        # Load raw theme data and convert to domain entities
+        raw_themes = self._load_raw_themes()
+        if raw_themes:
+            self._domain_hierarchy = self._taxonomy_service.build_domain_hierarchy(raw_themes)
 
-    def _load_themes(self) -> Sequence[ThemeRow]:
+    def _load_raw_themes(self):
+        """Load raw theme data from blob storage."""
+        from mapper_api.domain.repositories.definitions import ThemeRow  # Import only for internal use
+        
         blob = self._container.get_blob_client("taxonomy.json")
         data = blob.download_blob().readall()
         rows = json.loads(data)
@@ -67,9 +69,6 @@ class BlobDefinitionsRepository(DefinitionsRepository):
         obj = json.loads(data)
         order = ["who", "what", "when", "where", "why"]
         return [{"name": k, "description": obj[k]} for k in order if k in obj]
-
-    def get_theme_rows(self) -> Sequence[ThemeRow]:
-        return self._themes or []
 
     def get_fivews_rows(self) -> Sequence[Dict[str, Any]]:
         return self._fivews or []

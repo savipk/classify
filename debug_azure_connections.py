@@ -20,7 +20,7 @@ async def test_blob_storage():
         )
         
         # Try to load definitions
-        themes = repo.get_theme_rows()
+        risk_themes = repo.get_risk_themes()
         fivews = repo.get_fivews_rows()
         
         print(f"✅ Blob Storage connected successfully!")

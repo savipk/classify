@@ -22,7 +22,7 @@ def test_blob_definitions_repo_live_reads_from_azure():
         client_secret=settings.AZURE_CLIENT_SECRET,
     )
 
-    themes = repo.get_theme_rows()
+    risk_themes = repo.get_risk_themes()
     fivews = repo.get_fivews_rows()
 
     assert isinstance(themes, (list, tuple))

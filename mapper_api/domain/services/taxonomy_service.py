@@ -38,14 +38,17 @@ class TaxonomyService:
                     cluster_id=row.cluster_id
                 )
 
-            # Build risk theme (each row = one theme)
+            # Build risk theme (each row = one theme) with all fields
             risk_theme = RiskTheme(
                 id=row.risk_theme_id,
                 name=row.risk_theme,
+                description=row.risk_theme_description,
                 taxonomy_id=row.taxonomy_id,
                 taxonomy=row.taxonomy,
+                taxonomy_description=row.taxonomy_description,
                 cluster=row.cluster,
-                cluster_id=row.cluster_id
+                cluster_id=row.cluster_id,
+                mapping_considerations=row.mapping_considerations
             )
             risk_themes.append(risk_theme)
 
