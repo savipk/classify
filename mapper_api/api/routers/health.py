@@ -68,7 +68,7 @@ async def azure_health_check():
             system="Test",
             user="ok",
             schema_name="Test",
-            schema={"type": "object", "properties": {"test": {"type": "string"}}, "additionalProperties": False},
+            schema={ "type": "object", "properties": {"test": {"type": "string"}}, "required": ["test"], "additionalProperties": False }
             max_tokens=5,
             deployment=settings.AZURE_OPENAI_DEPLOYMENT
         )

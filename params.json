@@ -1,0 +1,6 @@
+{
+    "risk_theme_scoring": {
+        "method": "llm",
+        "score_threshold": 0.25
+    }
+}

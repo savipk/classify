@@ -1,8 +1,8 @@
 """HTTP router for POST /taxonomy_mapper."""
 from __future__ import annotations
 from fastapi import APIRouter
-from mapper_api.application.dto.http_requests import CommonRequest
-from mapper_api.application.dto.http_responses import TaxonomyResponse
+from mapper_api.application.dto.http_common import CommonRequest
+from mapper_api.application.dto.http_common import TaxonomyResponse
 from mapper_api.config.settings import Settings
 from mapper_api.infrastructure.azure.blob_definitions_repo import BlobDefinitionsRepository
 from mapper_api.infrastructure.azure.openai_client import AzureOpenAILLMClient
@@ -46,6 +46,7 @@ def get_taxonomy_controller() -> TaxonomyController:
         classify_use_case=classify_use_case
     )
 
+controller = get_taxonomy_controller()
 
 @router.post('/taxonomy_mapper', response_model=TaxonomyResponse)
 async def taxonomy_mapper(req: CommonRequest) -> TaxonomyResponse:
@@ -55,5 +56,4 @@ async def taxonomy_mapper(req: CommonRequest) -> TaxonomyResponse:
     Dependencies are created right here where they're used, making the flow
     transparent and easy to follow. This follows EcomApp's pattern.
     """
-    controller = get_taxonomy_controller()
     return controller.handle_taxonomy_mapping(req)

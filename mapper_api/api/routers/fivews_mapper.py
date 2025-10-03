@@ -1,8 +1,8 @@
 """HTTP router for POST /5ws_mapper."""
 from __future__ import annotations
 from fastapi import APIRouter
-from mapper_api.application.dto.http_requests import CommonRequest
-from mapper_api.application.dto.http_responses import FiveWResponse
+from mapper_api.application.dto.http_common import CommonRequest
+from mapper_api.application.dto.http_common import FiveWResponse
 from mapper_api.config.settings import Settings
 from mapper_api.infrastructure.azure.blob_definitions_repo import BlobDefinitionsRepository
 from mapper_api.infrastructure.azure.openai_client import AzureOpenAILLMClient
@@ -46,7 +46,7 @@ def get_fivews_controller() -> FiveWsController:
         classify_use_case=classify_use_case
     )
 
-
+controller = get_fivews_controller()
 @router.post('/5ws_mapper', response_model=FiveWResponse)
 async def fivews_mapper(req: CommonRequest) -> FiveWResponse:
     """
@@ -55,5 +55,4 @@ async def fivews_mapper(req: CommonRequest) -> FiveWResponse:
     Dependencies are created right here where they're used, making the flow
     transparent and easy to follow. This follows EcomApp's pattern.
     """
-    controller = get_fivews_controller()
     return controller.handle_fivews_mapping(req)

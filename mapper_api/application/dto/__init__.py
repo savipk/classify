@@ -1,14 +1,14 @@
 """Application Data Transfer Objects.
 
 Provides DTOs for different layers:
-- use_case_requests: Internal use case contracts  
-- http_requests: HTTP API input contracts
-- http_responses: HTTP API output contracts
+- domain_mapping: Internal domain mapping contracts  
+- domain_evaluation: Internal evaluation contracts
+- http_common: Common HTTP API contracts
+- http_evaluation: HTTP evaluation API contracts
 - llm_schemas: LLM JSON schema contracts
 """
-from .use_case_requests import TaxonomyMappingRequest, FiveWsMappingRequest
-from .http_requests import CommonRequest, CommonHeader, CommonData
-from .http_responses import TaxonomyResponse, FiveWResponse
+from .domain_mapping import TaxonomyMappingRequest, FiveWsMappingRequest
+from .http_common import CommonRequest, CommonHeader, CommonData, TaxonomyResponse, FiveWResponse
 from .llm_schemas import build_taxonomy_models, FiveWOut
 
 __all__ = [

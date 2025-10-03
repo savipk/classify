@@ -1,9 +1,30 @@
-"""Pydantic response DTOs matching API contracts."""
+"""Common HTTP DTOs for requests and responses."""
 from __future__ import annotations
 from typing import Literal, Annotated, List
 from pydantic import BaseModel, Field
 from pydantic import ConfigDict
 
+
+# ============================================================================
+# Common Request DTOs
+# ============================================================================
+
+class CommonHeader(BaseModel):
+    recordId: str = Field(...)
+
+
+class CommonData(BaseModel):
+    controlDescription: str = Field(...)
+
+
+class CommonRequest(BaseModel):
+    header: CommonHeader
+    data: CommonData
+
+
+# ============================================================================
+# Common Response DTOs
+# ============================================================================
 
 class ResponseHeader(BaseModel):
     recordId: str

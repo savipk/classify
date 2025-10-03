@@ -3,9 +3,9 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Dict, Any
 
-from mapper_api.application.dto.http_requests import CommonRequest
-from mapper_api.application.dto.http_responses import TaxonomyResponse, ResponseHeader, TaxonomyData
-from mapper_api.application.dto.use_case_requests import TaxonomyMappingRequest
+from mapper_api.application.dto.http_common import CommonRequest
+from mapper_api.application.dto.http_common import TaxonomyResponse, ResponseHeader, TaxonomyData
+from mapper_api.application.dto.domain_mapping import TaxonomyMappingRequest
 from mapper_api.application.use_cases.map_control_to_themes import ClassifyControlToThemes
 from mapper_api.domain.errors import ControlValidationError
 

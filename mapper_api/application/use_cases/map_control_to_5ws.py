@@ -7,7 +7,7 @@ from mapper_api.application.prompts import fivews as fivews_prompts
 from mapper_api.domain.entities.control import Control
 from mapper_api.domain.repositories.definitions import DefinitionsRepository
 from mapper_api.domain.errors import ControlValidationError, DefinitionsUnavailableError
-from mapper_api.application.dto.use_case_requests import FiveWsMappingRequest
+from mapper_api.application.dto.domain_mapping import FiveWsMappingRequest
 from mapper_api.config.settings import Settings
 
 _ORDER = ["who", "what", "when", "where", "why"]

@@ -2,9 +2,9 @@
 from __future__ import annotations
 from dataclasses import dataclass
 
-from mapper_api.application.dto.http_requests import CommonRequest
-from mapper_api.application.dto.http_responses import FiveWResponse, ResponseHeader, FiveWData
-from mapper_api.application.dto.use_case_requests import FiveWsMappingRequest
+from mapper_api.application.dto.http_common import CommonRequest
+from mapper_api.application.dto.http_common import FiveWResponse, ResponseHeader, FiveWData
+from mapper_api.application.dto.domain_mapping import FiveWsMappingRequest
 from mapper_api.application.use_cases.map_control_to_5ws import ClassifyControlTo5Ws
 from mapper_api.domain.errors import ControlValidationError
 

@@ -1,6 +1,7 @@
 """Request DTOs for evaluation operations."""
 from __future__ import annotations
 from dataclasses import dataclass
+from typing import List
 from mapper_api.domain.value_objects.metric import MetricType
 
 
@@ -8,4 +9,5 @@ from mapper_api.domain.value_objects.metric import MetricType
 class EvaluationRequest:
     """Use case request for evaluation operations."""
     record_id: str
-    metric_type: MetricType
+    metric_types: List[MetricType]
+    n_records: int = None  # For latency testing - number of records to test

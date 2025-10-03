@@ -2,11 +2,12 @@
 from __future__ import annotations
 from fastapi import APIRouter
 
-from mapper_api.application.dto.http_evaluation_requests import EvaluationHttpRequest
-from mapper_api.application.dto.evaluation_responses import EvaluationResponse
+from mapper_api.application.dto.http_evaluation import EvaluationHttpRequest
+from mapper_api.application.dto.http_evaluation import EvaluationResponse
 from mapper_api.config.settings import Settings
 from mapper_api.infrastructure.azure.blob_definitions_repo import BlobDefinitionsRepository
 from mapper_api.infrastructure.azure.blob_ground_truth_repo import BlobGroundTruthRepository
+from mapper_api.infrastructure.azure.blob_evaluation_results_writer import BlobEvaluationResultsWriter
 from mapper_api.infrastructure.azure.openai_client import AzureOpenAILLMClient
 from mapper_api.application.use_cases.map_control_to_themes import ClassifyControlToThemes
 from mapper_api.application.use_cases.map_control_to_5ws import ClassifyControlTo5Ws
@@ -42,6 +43,14 @@ def get_evaluation_controller() -> EvaluationController:
         client_secret=settings.AZURE_CLIENT_SECRET,
     )
     
+    results_writer = BlobEvaluationResultsWriter(
+        account_name=settings.STORAGE_ACCOUNT_NAME,
+        container_name=settings.STORAGE_CONTAINER_NAME,
+        tenant_id=settings.AZURE_TENANT_ID,
+        client_id=settings.AZURE_CLIENT_ID,
+        client_secret=settings.AZURE_CLIENT_SECRET,
+    )
+    
     llm_client = AzureOpenAILLMClient(
         endpoint=settings.AZURE_OPENAI_ENDPOINT,
         api_key=settings.AZURE_OPENAI_API_KEY,
@@ -67,12 +76,14 @@ def get_evaluation_controller() -> EvaluationController:
         ground_truth_repo=ground_truth_repo,
         evaluation_service=evaluation_service,
         taxonomy_classifier=taxonomy_classifier,
-        fivews_classifier=fivews_classifier
+        fivews_classifier=fivews_classifier,
+        llm_client=llm_client
     )
     
     # Create and return controller
     return EvaluationController(
-        evaluate_use_case=evaluate_use_case
+        evaluate_use_case=evaluate_use_case,
+        results_writer=results_writer
     )
 
 

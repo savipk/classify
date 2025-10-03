@@ -9,7 +9,7 @@ from mapper_api.domain.entities.risk_theme import RiskTheme
 from mapper_api.application.ports.llm import LLMClient
 from mapper_api.application.use_cases.map_control_to_themes import ClassifyControlToThemes
 from mapper_api.application.use_cases.map_control_to_5ws import ClassifyControlTo5Ws
-from mapper_api.application.dto.use_case_requests import TaxonomyMappingRequest, FiveWsMappingRequest
+from mapper_api.application.dto.domain_mapping import TaxonomyMappingRequest, FiveWsMappingRequest
 
 
 class FakeRepo(DefinitionsRepository):

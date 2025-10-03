@@ -8,7 +8,7 @@ from mapper_api.application.use_cases.map_control_to_themes import ClassifyContr
 from mapper_api.application.use_cases.map_control_to_5ws import ClassifyControlTo5Ws
 from mapper_api.interface.controllers.taxonomy_controller import TaxonomyController
 from mapper_api.interface.controllers.fivews_controller import FiveWsController
-from mapper_api.application.dto.http_requests import CommonRequest, CommonHeader, CommonData
+from mapper_api.application.dto.http_common import CommonRequest, CommonHeader, CommonData
 
 
 def test_complete_taxonomy_flow():
