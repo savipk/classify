@@ -4,13 +4,13 @@ import time
 import statistics
 from typing import List, Set, Dict, Any, Callable
 from mapper_api.domain.value_objects.metric import (
-    RecallScore, 
+    Score, 
     IndividualRecall, 
     SummaryRecall,
-    AccuracyScore,
+    Score,
     IndividualAccuracy,
     SummaryAccuracy,
-    LLMJudgeScore,
+    Score,
     IndividualLLMJudge,
     SummaryLLMJudge,
     ConfidenceLevel,
@@ -58,7 +58,7 @@ class EvaluationService:
         
         return IndividualRecall(
             control_id=ground_truth_record.control_id,
-            recall=RecallScore(recall_value),
+            recall=Score(value=recall_value),
             details={
                 "ground_truth_themes": list(gt_theme_names),
                 "predicted_themes": list(predicted_names),
@@ -103,7 +103,7 @@ class EvaluationService:
         
         return IndividualRecall(
             control_id=ground_truth_record.control_id,
-            recall=RecallScore(recall_value),
+            recall=Score(value=recall_value),
             details={
                 "ground_truth_present_ws": list(gt_present_ws),
                 "predicted_present_ws": list(predicted_present_ws),
@@ -126,9 +126,9 @@ class EvaluationService:
         
         return SummaryRecall(
             total_records=len(individual_recalls),
-            average_recall=RecallScore(sum(recall_values) / len(recall_values)),
-            min_recall=RecallScore(min(recall_values)),
-            max_recall=RecallScore(max(recall_values))
+            average_recall=Score(value=sum(recall_values) / len(recall_values)),
+            min_recall=Score(value=min(recall_values)),
+            max_recall=Score(value=max(recall_values))
         )
     
     def calculate_top1_accuracy_risk_theme(
@@ -154,7 +154,7 @@ class EvaluationService:
         
         return IndividualAccuracy(
             control_id=ground_truth_record.control_id,
-            accuracy=AccuracyScore(accuracy_value),
+            accuracy=Score(value=accuracy_value),
             details={
                 "ground_truth_themes": list(gt_theme_names),
                 "top1_predicted_theme": top1_theme,
@@ -178,7 +178,7 @@ class EvaluationService:
         if not predicted_themes:
             return IndividualLLMJudge(
                 control_id=ground_truth_record.control_id,
-                llm_judge_score=LLMJudgeScore(0.0),
+                llm_judge_score=Score(value=0.0),
                 details={
                     "error": "No predictions to evaluate",
                     "dimensions": {}
@@ -263,7 +263,7 @@ Evaluate the reasoning quality and return JSON in this exact format:
         
         return IndividualLLMJudge(
             control_id=ground_truth_record.control_id,
-            llm_judge_score=LLMJudgeScore(overall_score),
+            llm_judge_score=Score(value=overall_score),
             details={
                 "predicted_theme": predicted_theme,
                 "reasoning": reasoning,
@@ -395,7 +395,7 @@ Return ONLY a JSON object with the confidence score:
                 
                 individual_latencies.append(IndividualLatency(
                     control_id=record.control_id,
-                    latency=LatencyScore(latency_ms),
+                    latency=LatencyScore(value_ms=latency_ms),
                     details={
                         "start_time": start_time,
                         "end_time": end_time,
@@ -409,7 +409,7 @@ Return ONLY a JSON object with the confidence score:
                 
                 individual_latencies.append(IndividualLatency(
                     control_id=record.control_id,
-                    latency=LatencyScore(latency_ms),
+                    latency=LatencyScore(value_ms=latency_ms),
                     details={
                         "start_time": start_time,
                         "end_time": end_time,
@@ -434,7 +434,7 @@ Return ONLY a JSON object with the confidence score:
         if not predicted_5ws:
             return IndividualLLMJudge(
                 control_id=ground_truth_record.control_id,
-                llm_judge_score=LLMJudgeScore(0.0),
+                llm_judge_score=Score(value=0.0),
                 details={
                     "error": "No predictions to evaluate",
                     "evaluations": []
@@ -524,7 +524,7 @@ Evaluate the reasoning quality and return JSON:
         
         return IndividualLLMJudge(
             control_id=ground_truth_record.control_id,
-            llm_judge_score=LLMJudgeScore(overall_score),
+            llm_judge_score=Score(value=overall_score),
             details={
                 "evaluations": evaluations,
                 "total_present_ws": len(evaluations),
@@ -560,7 +560,7 @@ Evaluate the reasoning quality and return JSON:
                 
                 individual_latencies.append(IndividualLatency(
                     control_id=record.control_id,
-                    latency=LatencyScore(latency_ms),
+                    latency=LatencyScore(value_ms=latency_ms),
                     details={
                         "start_time": start_time,
                         "end_time": end_time,
@@ -574,7 +574,7 @@ Evaluate the reasoning quality and return JSON:
                 
                 individual_latencies.append(IndividualLatency(
                     control_id=record.control_id,
-                    latency=LatencyScore(latency_ms),
+                    latency=LatencyScore(value_ms=latency_ms),
                     details={
                         "start_time": start_time,
                         "end_time": end_time,
@@ -597,9 +597,9 @@ Evaluate the reasoning quality and return JSON:
         
         return SummaryAccuracy(
             total_records=len(individual_accuracies),
-            average_accuracy=AccuracyScore(sum(accuracy_values) / len(accuracy_values)),
-            min_accuracy=AccuracyScore(min(accuracy_values)),
-            max_accuracy=AccuracyScore(max(accuracy_values))
+            average_accuracy=Score(value=sum(accuracy_values) / len(accuracy_values)),
+            min_accuracy=Score(value=min(accuracy_values)),
+            max_accuracy=Score(value=max(accuracy_values))
         )
     
     def calculate_summary_llm_judge(
@@ -614,9 +614,9 @@ Evaluate the reasoning quality and return JSON:
         
         return SummaryLLMJudge(
             total_records=len(individual_judges),
-            average_score=LLMJudgeScore(sum(judge_values) / len(judge_values)),
-            min_score=LLMJudgeScore(min(judge_values)),
-            max_score=LLMJudgeScore(max(judge_values))
+            average_score=Score(value=sum(judge_values) / len(judge_values)),
+            min_score=Score(value=min(judge_values)),
+            max_score=Score(value=max(judge_values))
         )
     
     def calculate_summary_latency(
@@ -635,9 +635,9 @@ Evaluate the reasoning quality and return JSON:
         
         return SummaryLatency(
             total_records=len(individual_latencies),
-            average_latency=LatencyScore(sum(latency_values) / len(latency_values)),
-            min_latency=LatencyScore(min(latency_values)),
-            max_latency=LatencyScore(max(latency_values)),
-            p95_latency=LatencyScore(latency_values[p95_index]),
-            p99_latency=LatencyScore(latency_values[p99_index])
+            average_latency=LatencyScore(value_ms=sum(latency_values) / len(latency_values)),
+            min_latency=LatencyScore(value_ms=min(latency_values)),
+            max_latency=LatencyScore(value_ms=max(latency_values)),
+            p95_latency=LatencyScore(value_ms=latency_values[p95_index]),
+            p99_latency=LatencyScore(value_ms=latency_values[p99_index])
         )

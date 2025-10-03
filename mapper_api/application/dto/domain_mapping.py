@@ -1,17 +1,19 @@
-"""Use case request DTOs for clear contracts between layers."""
+"""Use case request DTOs for clear contracts between layers using Pydantic V2."""
 from __future__ import annotations
-from dataclasses import dataclass
+from pydantic import BaseModel, Field
 
 
-@dataclass(frozen=True)
-class TaxonomyMappingRequest:
+class TaxonomyMappingRequest(BaseModel):
     """Request object for taxonomy mapping use case."""
-    record_id: str
-    control_description: str
+    model_config = {"frozen": True}
+    
+    record_id: str = Field(..., description="Record ID for mapping request")
+    control_description: str = Field(..., description="Control description to map")
 
 
-@dataclass(frozen=True)
-class FiveWsMappingRequest:
+class FiveWsMappingRequest(BaseModel):
     """Request object for 5Ws mapping use case."""
-    record_id: str
-    control_description: str
+    model_config = {"frozen": True}
+    
+    record_id: str = Field(..., description="Record ID for mapping request")
+    control_description: str = Field(..., description="Control description to analyze")

@@ -1,7 +1,7 @@
 """Health check endpoints for Azure service connectivity."""
 from __future__ import annotations
 from fastapi import APIRouter
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from mapper_api.config.settings import Settings
 from mapper_api.infrastructure.azure.blob_definitions_repo import BlobDefinitionsRepository
@@ -11,8 +11,11 @@ router = APIRouter()
 
 
 class HealthStatus(BaseModel):
-    status: str
-    services: str
+    """Health status response model."""
+    model_config = {"frozen": True}
+    
+    status: str = Field(..., description="Overall health status")
+    services: str = Field(..., description="Services status details")
 
 
 @router.get('/health', response_model=HealthStatus)
@@ -68,7 +71,7 @@ async def azure_health_check():
             system="Test",
             user="ok",
             schema_name="Test",
-            schema={ "type": "object", "properties": {"test": {"type": "string"}}, "required": ["test"], "additionalProperties": False }
+            schema={ "type": "object", "properties": {"test": {"type": "string"}}, "required": ["test"], "additionalProperties": False },
             max_tokens=5,
             deployment=settings.AZURE_OPENAI_DEPLOYMENT
         )

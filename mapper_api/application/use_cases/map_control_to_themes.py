@@ -3,7 +3,6 @@ from dataclasses import dataclass
 
 from mapper_api.domain.entities.control import Control
 from mapper_api.domain.repositories.definitions import DefinitionsRepository
-from mapper_api.domain.services.taxonomy_service import TaxonomyService
 from mapper_api.domain.errors import ControlValidationError, DefinitionsUnavailableError
 from mapper_api.application.dto.llm_schemas import build_taxonomy_models
 from mapper_api.application.prompts.taxonomy import TaxonomyPrompt
@@ -24,7 +23,6 @@ class ClassifyControlToThemes:
     """
     repo: DefinitionsRepository
     llm: LLMClient
-    taxonomy_service: TaxonomyService
     prompt: TaxonomyPrompt
     TaxonomyOut: type
 
@@ -39,12 +37,10 @@ class ClassifyControlToThemes:
         allowed_names = [theme.name for theme in risk_themes]
         _, TaxonomyOut = build_taxonomy_models(allowed_names)
         prompt = TaxonomyPrompt(risk_themes)
-        taxonomy_service = TaxonomyService()
 
         return cls(
             repo=repo,
             llm=llm,
-            taxonomy_service=taxonomy_service,
             prompt=prompt,
             TaxonomyOut=TaxonomyOut
         )
@@ -101,7 +97,7 @@ class ClassifyControlToThemes:
             ThemeClassification(
                 name=i.name, 
                 id=i.id, 
-                score=Score(i.score), 
+                score=Score(value=i.score), 
                 reasoning=i.reasoning
             )
             for i in valid_items

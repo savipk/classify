@@ -2,8 +2,8 @@
 
 import pytest
 from mapper_api.domain.entities.control import Control
-from mapper_api.mock.definitions_repo import LocalFileDefinitionsRepository
-from mapper_api.mock.llm_client import StaticLLMClient
+from mapper_api.infrastructure.local.definitions_repo import MockDefinitionsRepository
+from mapper_api.infrastructure.local.llm_client import StaticLLMClient
 from mapper_api.application.use_cases.map_control_to_themes import ClassifyControlToThemes
 from mapper_api.application.use_cases.map_control_to_5ws import ClassifyControlTo5Ws
 from mapper_api.interface.controllers.taxonomy_controller import TaxonomyController
@@ -14,7 +14,7 @@ from mapper_api.application.dto.http_common import CommonRequest, CommonHeader, 
 def test_complete_taxonomy_flow():
     """Test complete flow from request to response for taxonomy mapping."""
     # Setup dependencies
-    repo = LocalFileDefinitionsRepository()
+    repo = MockDefinitionsRepository()
     llm = StaticLLMClient()
     
     # Create use case
@@ -28,7 +28,7 @@ def test_complete_taxonomy_flow():
     # Create request
     request = CommonRequest(
         header=CommonHeader(recordId='test-taxonomy-123'),
-        data=CommonData(controlDescription='Authentication controls must ensure secure access')
+        data=CommonData(controlDescription='Authentication controls must ensure secure access to systems and data through proper verification mechanisms')
     )
     
     # Execute
@@ -51,7 +51,7 @@ def test_complete_taxonomy_flow():
 def test_complete_fivews_flow():
     """Test complete flow from request to response for 5Ws mapping."""
     # Setup dependencies
-    repo = LocalFileDefinitionsRepository()
+    repo = MockDefinitionsRepository()
     llm = StaticLLMClient()
     
     # Create use case
@@ -94,7 +94,7 @@ def test_domain_validation_errors():
     from mapper_api.domain.errors import ControlValidationError
     
     # Setup dependencies
-    repo = LocalFileDefinitionsRepository()
+    repo = MockDefinitionsRepository()
     llm = StaticLLMClient()
     use_case = ClassifyControlToThemes.from_defs(repo, llm)
     controller = TaxonomyController(classify_use_case=use_case)
@@ -139,7 +139,7 @@ def test_api_app_structure():
 
 def test_repository_domain_entities():
     """Test that repository correctly builds domain entities."""
-    repo = LocalFileDefinitionsRepository()
+    repo = MockDefinitionsRepository()
     
     # Test clusters
     clusters = repo.get_clusters()

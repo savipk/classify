@@ -1,4 +1,4 @@
-"""Mock GroundTruthRepository that reads local JSON files from mock/data."""
+"""Local file-based GroundTruthRepository that reads JSON files from local/data."""
 from __future__ import annotations
 import json
 from pathlib import Path
@@ -13,7 +13,7 @@ from mapper_api.domain.repositories.ground_truth import (
 
 
 class LocalFileGroundTruthRepository(GroundTruthRepository):
-    """Mock implementation that reads ground truth from local JSON files."""
+    """Local file implementation that reads ground truth from local JSON files."""
     
     def __init__(self, base_dir: str | Path = None) -> None:
         self._base = Path(base_dir) if base_dir else Path(__file__).parent / 'data'

@@ -1,8 +1,9 @@
-"""Value objects for evaluation metrics."""
+"""Value objects for evaluation metrics using Pydantic V2."""
 from __future__ import annotations
-from dataclasses import dataclass
 from enum import Enum
 from typing import List, Dict, Any
+from pydantic import BaseModel, Field
+from mapper_api.domain.value_objects.score import Score
 
 
 class MetricType(Enum):
@@ -17,22 +18,14 @@ class MetricType(Enum):
     LATENCY_5WS_MAPPER = "latency_5ws_mapper"
 
 
-@dataclass(frozen=True, slots=True)
-class RecallScore:
-    """Value object for recall score with validation."""
-    value: float
-    
-    def __post_init__(self) -> None:
-        if not 0.0 <= self.value <= 1.0:
-            raise ValueError(f"Recall score must be between 0.0 and 1.0, got {self.value}")
-
-
-@dataclass(frozen=True, slots=True)
-class IndividualRecall:
+# Individual Metric Results
+class IndividualRecall(BaseModel):
     """Recall score for a single control/record."""
-    control_id: str
-    recall: RecallScore
-    details: Dict[str, Any]  # Additional details specific to the metric
+    model_config = {"frozen": True}
+    
+    control_id: str = Field(..., description="Control ID")
+    recall: Score = Field(..., description="Recall score")
+    details: Dict[str, Any] = Field(default_factory=dict, description="Additional details")
     
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary for serialization."""
@@ -43,40 +36,13 @@ class IndividualRecall:
         }
 
 
-@dataclass(frozen=True, slots=True)
-class SummaryRecall:
-    """Summary recall across all evaluated records."""
-    total_records: int
-    average_recall: RecallScore
-    min_recall: RecallScore
-    max_recall: RecallScore
-    
-    def to_dict(self) -> Dict[str, Any]:
-        """Convert to dictionary for serialization."""
-        return {
-            "total_records": self.total_records,
-            "average_recall": self.average_recall.value,
-            "min_recall": self.min_recall.value,
-            "max_recall": self.max_recall.value
-        }
-
-
-@dataclass(frozen=True, slots=True)
-class AccuracyScore:
-    """Value object for accuracy score with validation."""
-    value: float
-    
-    def __post_init__(self) -> None:
-        if not 0.0 <= self.value <= 1.0:
-            raise ValueError(f"Accuracy score must be between 0.0 and 1.0, got {self.value}")
-
-
-@dataclass(frozen=True, slots=True)
-class IndividualAccuracy:
+class IndividualAccuracy(BaseModel):
     """Accuracy score for a single control/record."""
-    control_id: str
-    accuracy: AccuracyScore
-    details: Dict[str, Any]
+    model_config = {"frozen": True}
+    
+    control_id: str = Field(..., description="Control ID")
+    accuracy: Score = Field(..., description="Accuracy score")
+    details: Dict[str, Any] = Field(default_factory=dict, description="Additional details")
     
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary for serialization."""
@@ -87,40 +53,13 @@ class IndividualAccuracy:
         }
 
 
-@dataclass(frozen=True, slots=True)
-class SummaryAccuracy:
-    """Summary accuracy across all evaluated records."""
-    total_records: int
-    average_accuracy: AccuracyScore
-    min_accuracy: AccuracyScore
-    max_accuracy: AccuracyScore
-    
-    def to_dict(self) -> Dict[str, Any]:
-        """Convert to dictionary for serialization."""
-        return {
-            "total_records": self.total_records,
-            "average_accuracy": self.average_accuracy.value,
-            "min_accuracy": self.min_accuracy.value,
-            "max_accuracy": self.max_accuracy.value
-        }
-
-
-@dataclass(frozen=True, slots=True)
-class LLMJudgeScore:
-    """Value object for LLM judge score with validation."""
-    value: float
-    
-    def __post_init__(self) -> None:
-        if not 0.0 <= self.value <= 1.0:
-            raise ValueError(f"LLM judge score must be between 0.0 and 1.0, got {self.value}")
-
-
-@dataclass(frozen=True, slots=True)
-class IndividualLLMJudge:
+class IndividualLLMJudge(BaseModel):
     """LLM judge score for a single control/record."""
-    control_id: str
-    llm_judge_score: LLMJudgeScore
-    details: Dict[str, Any]
+    model_config = {"frozen": True}
+    
+    control_id: str = Field(..., description="Control ID")
+    llm_judge_score: Score = Field(..., description="LLM judge score")
+    details: Dict[str, Any] = Field(default_factory=dict, description="Additional details")
     
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary for serialization."""
@@ -131,25 +70,35 @@ class IndividualLLMJudge:
         }
 
 
-@dataclass(frozen=True, slots=True)
-class SummaryLLMJudge:
-    """Summary LLM judge scores across all evaluated records."""
-    total_records: int
-    average_score: LLMJudgeScore
-    min_score: LLMJudgeScore
-    max_score: LLMJudgeScore
+class LatencyScore(BaseModel):
+    """Value object for latency in milliseconds."""
+    model_config = {"frozen": True}
+    
+    value_ms: float = Field(..., ge=0.0, description="Latency in milliseconds")
+    
+    def to_dict(self) -> Dict[str, Any]:
+        """Convert to dictionary for serialization."""
+        return {"value_ms": self.value_ms}
+
+
+class IndividualLatency(BaseModel):
+    """Latency measurement for a single control/record."""
+    model_config = {"frozen": True}
+    
+    control_id: str = Field(..., description="Control ID")
+    latency: LatencyScore = Field(..., description="Latency measurement")
+    details: Dict[str, Any] = Field(default_factory=dict, description="Additional details")
     
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary for serialization."""
         return {
-            "total_records": self.total_records,
-            "average_score": self.average_score.value,
-            "min_score": self.min_score.value,
-            "max_score": self.max_score.value
+            "control_id": self.control_id,
+            "latency_ms": self.latency.value_ms,
+            "details": self.details
         }
 
 
-@dataclass(frozen=True, slots=True)
+# Unmatched Analysis (no score validation needed)
 class ConfidenceLevel:
     """Confidence level categorization."""
     HIGH = "high"
@@ -173,13 +122,14 @@ class ConfidenceLevel:
             return cls.LOW
 
 
-@dataclass(frozen=True, slots=True)
-class UnmatchedTheme:
+class UnmatchedTheme(BaseModel):
     """Details for an unmatched risk theme."""
-    name: str
-    confidence_score: float
-    confidence_level: str
-    needs_attention: bool
+    model_config = {"frozen": True}
+    
+    name: str = Field(..., description="Theme name")
+    confidence_score: float = Field(..., ge=0.0, le=1.0, description="Confidence score")
+    confidence_level: str = Field(..., description="Confidence level")
+    needs_attention: bool = Field(..., description="Whether needs SME attention")
     
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary for serialization."""
@@ -191,15 +141,16 @@ class UnmatchedTheme:
         }
 
 
-@dataclass(frozen=True, slots=True)
-class IndividualUnmatchedAnalysis:
+class IndividualUnmatchedAnalysis(BaseModel):
     """Unmatched analysis for a single control/record."""
-    control_id: str
-    control_description: str
-    ground_truth_themes: List[str]
-    ai_predicted_themes: List[str]
-    only_in_gt: List[UnmatchedTheme]
-    only_in_ai: List[UnmatchedTheme]
+    model_config = {"frozen": True}
+    
+    control_id: str = Field(..., description="Control ID")
+    control_description: str = Field(..., description="Control description")
+    ground_truth_themes: List[str] = Field(default_factory=list, description="Ground truth themes")
+    ai_predicted_themes: List[str] = Field(default_factory=list, description="AI predicted themes")
+    only_in_gt: List[UnmatchedTheme] = Field(default_factory=list, description="Themes only in ground truth")
+    only_in_ai: List[UnmatchedTheme] = Field(default_factory=list, description="Themes only in AI predictions")
     
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary for serialization."""
@@ -213,41 +164,74 @@ class IndividualUnmatchedAnalysis:
         }
 
 
-@dataclass(frozen=True, slots=True)
-class LatencyScore:
-    """Value object for latency in milliseconds."""
-    value_ms: float
+# Summary Results
+class SummaryRecall(BaseModel):
+    """Summary recall across all evaluated records."""
+    model_config = {"frozen": True}
     
-    def __post_init__(self) -> None:
-        if self.value_ms < 0:
-            raise ValueError(f"Latency must be non-negative, got {self.value_ms}")
-
-
-@dataclass(frozen=True, slots=True)
-class IndividualLatency:
-    """Latency measurement for a single control/record."""
-    control_id: str
-    latency: LatencyScore
-    details: Dict[str, Any]
+    total_records: int = Field(..., ge=0, description="Total number of records")
+    average_recall: Score = Field(..., description="Average recall score")
+    min_recall: Score = Field(..., description="Minimum recall score")
+    max_recall: Score = Field(..., description="Maximum recall score")
     
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary for serialization."""
         return {
-            "control_id": self.control_id,
-            "latency_ms": self.latency.value_ms,
-            "details": self.details
+            "total_records": self.total_records,
+            "average_recall": self.average_recall.value,
+            "min_recall": self.min_recall.value,
+            "max_recall": self.max_recall.value
         }
 
 
-@dataclass(frozen=True, slots=True)
-class SummaryLatency:
+class SummaryAccuracy(BaseModel):
+    """Summary accuracy across all evaluated records."""
+    model_config = {"frozen": True}
+    
+    total_records: int = Field(..., ge=0, description="Total number of records")
+    average_accuracy: Score = Field(..., description="Average accuracy score")
+    min_accuracy: Score = Field(..., description="Minimum accuracy score")
+    max_accuracy: Score = Field(..., description="Maximum accuracy score")
+    
+    def to_dict(self) -> Dict[str, Any]:
+        """Convert to dictionary for serialization."""
+        return {
+            "total_records": self.total_records,
+            "average_accuracy": self.average_accuracy.value,
+            "min_accuracy": self.min_accuracy.value,
+            "max_accuracy": self.max_accuracy.value
+        }
+
+
+class SummaryLLMJudge(BaseModel):
+    """Summary LLM judge scores across all evaluated records."""
+    model_config = {"frozen": True}
+    
+    total_records: int = Field(..., ge=0, description="Total number of records")
+    average_score: Score = Field(..., description="Average LLM judge score")
+    min_score: Score = Field(..., description="Minimum LLM judge score")
+    max_score: Score = Field(..., description="Maximum LLM judge score")
+    
+    def to_dict(self) -> Dict[str, Any]:
+        """Convert to dictionary for serialization."""
+        return {
+            "total_records": self.total_records,
+            "average_score": self.average_score.value,
+            "min_score": self.min_score.value,
+            "max_score": self.max_score.value
+        }
+
+
+class SummaryLatency(BaseModel):
     """Summary latency across all evaluated records."""
-    total_records: int
-    average_latency: LatencyScore
-    min_latency: LatencyScore
-    max_latency: LatencyScore
-    p95_latency: LatencyScore
-    p99_latency: LatencyScore
+    model_config = {"frozen": True}
+    
+    total_records: int = Field(..., ge=0, description="Total number of records")
+    average_latency: LatencyScore = Field(..., description="Average latency")
+    min_latency: LatencyScore = Field(..., description="Minimum latency")
+    max_latency: LatencyScore = Field(..., description="Maximum latency")
+    p95_latency: LatencyScore = Field(..., description="95th percentile latency")
+    p99_latency: LatencyScore = Field(..., description="99th percentile latency")
     
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary for serialization."""
@@ -259,3 +243,4 @@ class SummaryLatency:
             "p95_latency_ms": self.p95_latency.value_ms,
             "p99_latency_ms": self.p99_latency.value_ms
         }
+

@@ -14,7 +14,6 @@ from mapper_api.application.dto.domain_mapping import TaxonomyMappingRequest, Fi
 
 class FakeRepo(DefinitionsRepository):
     def __init__(self):
-        from mapper_api.domain.services.taxonomy_service import TaxonomyService
         from mapper_api.domain.repositories.definitions import ThemeRow
         
         # Create raw theme data internally
@@ -27,8 +26,50 @@ class FakeRepo(DefinitionsRepository):
                      risk_theme_id=30, risk_theme='Theme C', risk_theme_description='d', mapping_considerations='m'),
         ]
         
-        self._service = TaxonomyService()
-        self._hierarchy = self._service.build_domain_hierarchy(theme_rows)
+        self._hierarchy = self._build_domain_hierarchy(theme_rows)
+
+    def _build_domain_hierarchy(self, theme_rows) -> Dict[str, List]:
+        """Convert flat ThemeRow data into proper domain entities."""
+        clusters = {}
+        taxonomies = {}
+        risk_themes = []
+
+        for row in theme_rows:
+            # Build cluster (deduplicated)
+            if row.cluster_id not in clusters:
+                clusters[row.cluster_id] = Cluster(
+                    id=row.cluster_id,
+                    name=row.cluster
+                )
+
+            # Build taxonomy (deduplicated)
+            if row.taxonomy_id not in taxonomies:
+                taxonomies[row.taxonomy_id] = Taxonomy(
+                    id=row.taxonomy_id,
+                    name=row.taxonomy,
+                    description=row.taxonomy_description,
+                    cluster_id=row.cluster_id
+                )
+
+            # Build risk theme (each row = one theme) with all fields
+            risk_theme = RiskTheme(
+                id=row.risk_theme_id,
+                name=row.risk_theme,
+                description=row.risk_theme_description,
+                taxonomy_id=row.taxonomy_id,
+                taxonomy=row.taxonomy,
+                taxonomy_description=row.taxonomy_description,
+                cluster=row.cluster,
+                cluster_id=row.cluster_id,
+                mapping_considerations=row.mapping_considerations
+            )
+            risk_themes.append(risk_theme)
+
+        return {
+            "clusters": list(clusters.values()),
+            "taxonomies": list(taxonomies.values()),
+            "risk_themes": risk_themes
+        }
 
     def get_fivews_rows(self):
         return [

@@ -8,7 +8,6 @@ from mapper_api.domain.repositories.definitions import DefinitionsRepository
 from mapper_api.domain.entities.cluster import Cluster
 from mapper_api.domain.entities.taxonomy import Taxonomy
 from mapper_api.domain.entities.risk_theme import RiskTheme
-from mapper_api.domain.services.taxonomy_service import TaxonomyService
 
 
 class BlobDefinitionsRepository(DefinitionsRepository):
@@ -28,7 +27,6 @@ class BlobDefinitionsRepository(DefinitionsRepository):
         )
         self._container = self._service.get_container_client(container_name)
         self._fivews: Optional[Sequence[Dict[str, Any]]] = None
-        self._taxonomy_service = TaxonomyService()
         self._domain_hierarchy: Optional[Dict[str, List]] = None
         self._load()
 
@@ -37,7 +35,7 @@ class BlobDefinitionsRepository(DefinitionsRepository):
         # Load raw theme data and convert to domain entities
         raw_themes = self._load_raw_themes()
         if raw_themes:
-            self._domain_hierarchy = self._taxonomy_service.build_domain_hierarchy(raw_themes)
+            self._domain_hierarchy = self._build_domain_hierarchy(raw_themes)
 
     def _load_raw_themes(self):
         """Load raw theme data from blob storage."""
@@ -62,6 +60,49 @@ class BlobDefinitionsRepository(DefinitionsRepository):
                 )
             )
         return result
+
+    def _build_domain_hierarchy(self, theme_rows) -> Dict[str, List]:
+        """Convert flat ThemeRow data into proper domain entities."""
+        clusters = {}
+        taxonomies = {}
+        risk_themes = []
+
+        for row in theme_rows:
+            # Build cluster (deduplicated)
+            if row.cluster_id not in clusters:
+                clusters[row.cluster_id] = Cluster(
+                    id=row.cluster_id,
+                    name=row.cluster
+                )
+
+            # Build taxonomy (deduplicated)
+            if row.taxonomy_id not in taxonomies:
+                taxonomies[row.taxonomy_id] = Taxonomy(
+                    id=row.taxonomy_id,
+                    name=row.taxonomy,
+                    description=row.taxonomy_description,
+                    cluster_id=row.cluster_id
+                )
+
+            # Build risk theme (each row = one theme) with all fields
+            risk_theme = RiskTheme(
+                id=row.risk_theme_id,
+                name=row.risk_theme,
+                description=row.risk_theme_description,
+                taxonomy_id=row.taxonomy_id,
+                taxonomy=row.taxonomy,
+                taxonomy_description=row.taxonomy_description,
+                cluster=row.cluster,
+                cluster_id=row.cluster_id,
+                mapping_considerations=row.mapping_considerations
+            )
+            risk_themes.append(risk_theme)
+
+        return {
+            "clusters": list(clusters.values()),
+            "taxonomies": list(taxonomies.values()),
+            "risk_themes": risk_themes
+        }
 
     def _load_fivews(self) -> Sequence[Dict[str, Any]]:
         blob = self._container.get_blob_client("5ws.json")
