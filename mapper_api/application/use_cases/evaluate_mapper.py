@@ -1,6 +1,5 @@
 """Use case: evaluate mapper predictions against ground truth."""
 from __future__ import annotations
-import requests
 from dataclasses import dataclass
 from typing import List, Dict, Any
 
@@ -14,7 +13,6 @@ from mapper_api.application.dto.domain_mapping import TaxonomyMappingRequest, Fi
 from mapper_api.application.use_cases.map_control_to_themes import ClassifyControlToThemes
 from mapper_api.application.use_cases.map_control_to_5ws import ClassifyControlTo5Ws
 from mapper_api.application.ports.llm import LLMClient
-from mapper_api.config.settings import Settings
 
 
 @dataclass
@@ -227,25 +225,18 @@ class EvaluateMapper:
         )
 
     def _evaluate_latency_risk_theme_mapper(self, gt_records, n_records: int = None) -> EvaluationResult:
-        """Evaluate latency for risk theme mapper via HTTP calls."""
-        settings = Settings()
-        base_url = f"http://localhost:{settings.PORT}"
+        """Evaluate latency for risk theme mapper via direct calls."""
         
-        def http_mapper_function(record_id: str, control_description: str) -> List[Dict[str, Any]]:
-            """HTTP wrapper for taxonomy mapper."""
-            payload = {
-                "header": {"recordId": record_id},
-                "data": {"controlDescription": control_description}
-            }
-            
-            response = requests.post(f"{base_url}/taxonomy_mapper", json=payload, timeout=30)
-            response.raise_for_status()
-            
-            result = response.json()
-            return result["data"]["taxonomyItems"]
+        def direct_mapper_function(record_id: str, control_description: str) -> List[Dict[str, Any]]:
+            """Direct call to taxonomy classifier."""
+            request = TaxonomyMappingRequest(
+                record_id=record_id,
+                control_description=control_description
+            )
+            return self.taxonomy_classifier.execute(request)
 
         individual_latencies = self.evaluation_service.calculate_latency_risk_theme_mapper(
-            gt_records, http_mapper_function, n_records
+            gt_records, direct_mapper_function, n_records
         )
 
         summary_latency = self.evaluation_service.calculate_summary_latency(individual_latencies)
@@ -281,25 +272,18 @@ class EvaluateMapper:
         )
 
     def _evaluate_latency_5ws_mapper(self, gt_records, n_records: int = None) -> EvaluationResult:
-        """Evaluate latency for 5Ws mapper via HTTP calls."""
-        settings = Settings()
-        base_url = f"http://localhost:{settings.PORT}"
+        """Evaluate latency for 5Ws mapper via direct calls."""
         
-        def http_mapper_function(record_id: str, control_description: str) -> List[Dict[str, Any]]:
-            """HTTP wrapper for 5Ws mapper."""
-            payload = {
-                "header": {"recordId": record_id},
-                "data": {"controlDescription": control_description}
-            }
-            
-            response = requests.post(f"{base_url}/5ws_mapper", json=payload, timeout=30)
-            response.raise_for_status()
-            
-            result = response.json()
-            return result["data"]["fiveWs"]
+        def direct_mapper_function(record_id: str, control_description: str) -> List[Dict[str, Any]]:
+            """Direct call to 5Ws classifier."""
+            request = FiveWsMappingRequest(
+                record_id=record_id,
+                control_description=control_description
+            )
+            return self.fivews_classifier.execute(request)
 
         individual_latencies = self.evaluation_service.calculate_latency_5ws_mapper(
-            gt_records, http_mapper_function, n_records
+            gt_records, direct_mapper_function, n_records
         )
 
         summary_latency = self.evaluation_service.calculate_summary_latency(individual_latencies)
