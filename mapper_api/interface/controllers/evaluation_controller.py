@@ -68,6 +68,17 @@ class EvaluationController:
         successful_metrics = 0
         
         for metric_type, evaluation_result in results.items():
+            # Check if the evaluation itself failed
+            if evaluation_result.error_message:
+                metric_results.append(MetricResult(
+                    metric_type=metric_type.value,
+                    file_path="",
+                    total_records=len(evaluation_result.individual_results),
+                    status="error",
+                    error_message=evaluation_result.error_message
+                ))
+                continue
+            
             try:
                 file_path = self.results_writer.write_evaluation_result(
                     request.header.recordId,
@@ -91,7 +102,7 @@ class EvaluationController:
                 metric_results.append(MetricResult(
                     metric_type=metric_type.value,
                     file_path="",
-                    total_records=0,
+                    total_records=len(evaluation_result.individual_results),
                     status="error",
                     error_message=str(e)
                 ))

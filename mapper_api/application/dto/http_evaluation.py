@@ -1,6 +1,6 @@
 """HTTP DTOs for evaluation requests and responses."""
 from __future__ import annotations
-from typing import Union, List
+from typing import Union, List, Optional
 from pydantic import BaseModel, Field, field_validator
 from mapper_api.application.dto.http_common import CommonHeader, ResponseHeader
 
@@ -43,7 +43,7 @@ class MetricResult(BaseModel):
     file_path: str = Field(..., description="Path to the metric result file in blob storage")
     total_records: int = Field(..., description="Total number of records evaluated")
     status: str = Field(..., description="Status: 'success' or 'error'")
-    error_message: str = Field(None, description="Error message if status is 'error'")
+    error_message: Optional[str] = Field(None, description="Error message if status is 'error'")
 
 
 class EvaluationResponse(BaseModel):

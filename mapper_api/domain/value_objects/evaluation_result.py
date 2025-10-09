@@ -34,11 +34,15 @@ class EvaluationResult(BaseModel):
         SummaryLLMJudge, 
         SummaryLatency
     ]] = Field(None, description="Summary result (None for unmatched analysis)")
+    error_message: Optional[str] = Field(None, description="Error message if evaluation failed")
     
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary for serialization."""
-        return {
+        result = {
             "metric_type": self.metric_type.value,
             "individual_results": [individual.to_dict() for individual in self.individual_results],
             "summary_result": self.summary_result.to_dict() if self.summary_result else None
         }
+        if self.error_message:
+            result["error_message"] = self.error_message
+        return result

@@ -103,7 +103,8 @@ class EvaluateMapper:
         return EvaluationResult(
             metric_type=metric_type,
             individual_results=[],
-            summary_result=None
+            summary_result=None,
+            error_message=error_message
         )
 
     def _evaluate_recall_k3_risk_theme(self, gt_records) -> EvaluationResult:
