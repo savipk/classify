@@ -119,7 +119,7 @@ class Fake5WsLLM(LLMClient):
 def test_classify_control_to_themes():
     repo = FakeRepo()
     llm = FakeLLM()
-    use_case = ClassifyControlToThemes.from_defs(repo, llm)
+    use_case = ClassifyControlToThemes.from_defs(repo, llm, deployment_name="test-deployment")
     
     request = TaxonomyMappingRequest(
         record_id="test-123",
@@ -136,7 +136,7 @@ def test_classify_control_to_themes():
 def test_classify_control_to_5ws():
     repo = FakeRepo()
     llm = Fake5WsLLM()
-    use_case = ClassifyControlTo5Ws.from_defs(repo, llm)
+    use_case = ClassifyControlTo5Ws.from_defs(repo, llm, deployment_name="test-deployment")
     
     request = FiveWsMappingRequest(
         record_id="test-123",
@@ -153,7 +153,7 @@ def test_classify_control_to_5ws():
 def test_control_validation_empty():
     repo = FakeRepo()
     llm = FakeLLM()
-    use_case = ClassifyControlToThemes.from_defs(repo, llm)
+    use_case = ClassifyControlToThemes.from_defs(repo, llm, deployment_name="test-deployment")
     
     request = TaxonomyMappingRequest(
         record_id="test-123",
@@ -167,7 +167,7 @@ def test_control_validation_empty():
 def test_control_validation_too_short():
     repo = FakeRepo()
     llm = FakeLLM()
-    use_case = ClassifyControlToThemes.from_defs(repo, llm)
+    use_case = ClassifyControlToThemes.from_defs(repo, llm, deployment_name="test-deployment")
     
     request = TaxonomyMappingRequest(
         record_id="test-123",
@@ -181,7 +181,7 @@ def test_control_validation_too_short():
 def test_control_validation_non_english():
     repo = FakeRepo()
     llm = FakeLLM()
-    use_case = ClassifyControlToThemes.from_defs(repo, llm)
+    use_case = ClassifyControlToThemes.from_defs(repo, llm, deployment_name="test-deployment")
     
     request = TaxonomyMappingRequest(
         record_id="test-123",
@@ -208,7 +208,7 @@ def test_score_thresholding():
     
     repo = FakeRepo()
     llm = LowScoreLLM()
-    use_case = ClassifyControlToThemes.from_defs(repo, llm)
+    use_case = ClassifyControlToThemes.from_defs(repo, llm, deployment_name="test-deployment")
     
     request = TaxonomyMappingRequest(
         record_id="test-123",

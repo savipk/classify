@@ -12,7 +12,6 @@ from mapper_api.application.ports.llm import LLMClient
 from mapper_api.application.dto.domain_mapping import TaxonomyMappingRequest
 from mapper_api.application.services.embedding_service import embed_text
 from mapper_api.application.services.mapping_threshold import compute_combined_score
-from mapper_api.config.settings import Settings
 from mapper_api.config.scoring_config import ScoringConfig
 
 
@@ -25,9 +24,10 @@ class ClassifyControlToThemes:
     llm: LLMClient
     prompt: TaxonomyPrompt
     TaxonomyOut: type
+    deployment_name: str
 
     @classmethod
-    def from_defs(cls, repo: DefinitionsRepository, llm: LLMClient):
+    def from_defs(cls, repo: DefinitionsRepository, llm: LLMClient, deployment_name: str):
         # Use domain entities
         risk_themes = repo.get_risk_themes()
         if not risk_themes:
@@ -42,7 +42,8 @@ class ClassifyControlToThemes:
             repo=repo,
             llm=llm,
             prompt=prompt,
-            TaxonomyOut=TaxonomyOut
+            TaxonomyOut=TaxonomyOut,
+            deployment_name=deployment_name
         )
 
     def execute(self, request: TaxonomyMappingRequest) -> list:
@@ -62,7 +63,6 @@ class ClassifyControlToThemes:
             control_description=ctrl.text
         )
         schema = self.TaxonomyOut.model_json_schema()
-        settings = Settings()
 
         raw = self.llm.json_schema_chat(
             system=system,
@@ -72,7 +72,7 @@ class ClassifyControlToThemes:
             max_tokens=600,
             temperature=0.1,
             context={"trace_id": request.record_id},
-            deployment=settings.AZURE_OPENAI_DEPLOYMENT
+            deployment=self.deployment_name
         )
 
         try:

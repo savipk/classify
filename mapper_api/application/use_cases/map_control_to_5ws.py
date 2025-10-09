@@ -8,7 +8,6 @@ from mapper_api.domain.entities.control import Control
 from mapper_api.domain.repositories.definitions import DefinitionsRepository
 from mapper_api.domain.errors import ControlValidationError, DefinitionsUnavailableError
 from mapper_api.application.dto.domain_mapping import FiveWsMappingRequest
-from mapper_api.config.settings import Settings
 
 _ORDER = ["who", "what", "when", "where", "why"]
 
@@ -22,11 +21,12 @@ class ClassifyControlTo5Ws:
     """
     repo: DefinitionsRepository
     llm: LLMClient
+    deployment_name: str
 
     @classmethod
-    def from_defs(cls, repo: DefinitionsRepository, llm: LLMClient):
+    def from_defs(cls, repo: DefinitionsRepository, llm: LLMClient, deployment_name: str):
         """Factory method to create use case instance."""
-        return cls(repo=repo, llm=llm)
+        return cls(repo=repo, llm=llm, deployment_name=deployment_name)
 
     def execute(self, request: FiveWsMappingRequest) -> list:
         """
@@ -48,7 +48,6 @@ class ClassifyControlTo5Ws:
         schema = FiveWOut.model_json_schema()
         system_prompt = fivews_prompts.SYSTEM
         user_prompt = fivews_prompts.build_user_prompt(ctrl.text, defs)
-        settings = Settings()
 
         raw = self.llm.json_schema_chat(
             system=system_prompt,
@@ -58,7 +57,7 @@ class ClassifyControlTo5Ws:
             max_tokens=400,
             temperature=0.1,
             context={"trace_id": request.record_id},
-            deployment=settings.AZURE_OPENAI_DEPLOYMENT,
+            deployment=self.deployment_name,
         )
 
         try:

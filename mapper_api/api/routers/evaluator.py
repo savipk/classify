@@ -63,12 +63,14 @@ def get_evaluation_controller() -> EvaluationController:
     # Create existing use cases for making predictions
     taxonomy_classifier = ClassifyControlToThemes.from_defs(
         repo=definitions_repo,
-        llm=llm_client
+        llm=llm_client,
+        deployment_name=settings.AZURE_OPENAI_DEPLOYMENT
     )
     
     fivews_classifier = ClassifyControlTo5Ws.from_defs(
         repo=definitions_repo,
-        llm=llm_client
+        llm=llm_client,
+        deployment_name=settings.AZURE_OPENAI_DEPLOYMENT
     )
     
     # Create evaluation use case with dependencies

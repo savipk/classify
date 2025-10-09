@@ -38,7 +38,8 @@ def get_taxonomy_controller() -> TaxonomyController:
     # Create use case with dependencies
     classify_use_case = ClassifyControlToThemes.from_defs(
         repo=definitions_repo,
-        llm=llm_client
+        llm=llm_client,
+        deployment_name=settings.AZURE_OPENAI_DEPLOYMENT
     )
     
     # Create and return controller
